@@ -1,0 +1,152 @@
+# -*- coding: utf-8 -*-
+
+from datetime import datetime
+
+from wordpress_converter import db
+
+
+class Base(db.Model):
+    """ Extensions to Base class. """
+
+    __abstract__  = True
+
+    id =  db.Column(db.Integer, primary_key=True)
+    
+    def as_dict(self):
+        """ Return object as a dictionary. """
+        temp_dict = {}
+        temp_dict['object_type'] = self.__class__.__name__
+        for c in self.__table__.columns:
+            cur_attr = getattr(self, c.name)
+            # If datetime generate string representation
+            if isinstance(cur_attr, datetime):
+                cur_attr = cur_attr.strftime('%d %B %Y')
+            temp_dict[c.name] = cur_attr
+        return temp_dict
+    
+    def populate(self, data):
+        """ Populates matching attributes of class instance. 
+        param dict data: dict where for each entry key, value equal attributename, attributevalue."""
+        for key, value in data.items():
+            if hasattr(self, key):
+                # Convert string dates into datetimes
+                if isinstance(getattr(self, key), datetime) or str(self.__table__.c[key].type) == 'DATE':
+                    value = datetime.strptime(value, "%d %B %Y")
+                setattr(self, key, value)
+
+# Define post to tag association table
+post_tag = db.Table('post_tag', 
+    db.Column('post_id', db.Integer, db.ForeignKey('post.id')),
+    db.Column('tag_id', db.Integer, db.ForeignKey('tag.id'))
+    )
+    
+# Define post to category association table
+post_category = db.Table('post_category', 
+    db.Column('post_id', db.Integer, db.ForeignKey('post.id')),
+    db.Column('category_id', db.Integer, db.ForeignKey('category.id'))
+    )
+
+# Define post to author association table
+post_author = db.Table('post_author', 
+    db.Column('post_id', db.Integer, db.ForeignKey('post.id')),
+    db.Column('author_id', db.Integer, db.ForeignKey('author.id'))
+    )
+
+class Category(Base):
+    """ Model for blog categories. """
+    __tablename__ = "category"
+    # Category name in lower case with spaces replaced by dashes
+    nicename = db.Column(db.String(256))
+    # Category name with spaces and capitals
+    display_name = db.Column(db.String(256))
+    
+    # parent is id of another category - use custom method to return children
+    # parent is referred to by nicename
+    parent = db.Column(db.Integer)
+    
+class Tag(Base):
+    """ Model for blog tags. """
+    __tablename__ = "tag"
+    # Tag name in lower case with spaces replaced by dashes
+    nicename = db.Column(db.String(256))
+    # Tag name with spaces and capitals
+    display_name = db.Column(db.String(256))
+    
+class Author(Base):
+    """ Model for blog authors. """
+    __tablename__ = "author"
+    login = db.Column(db.String(64))
+    email = db.Column(db.String(256))
+    display_name = db.Column(db.String(256))
+    first_name = db.Column(db.String(128))
+    last_name = db.Column(db.String(128))
+    
+class Post(Base):
+    """ Model for blog post. """
+    __tablename__ = "post"
+    display_title = db.Column(db.String(256))
+    # Post name in lower case with spaces replaced by dashes
+    nicename = db.Column(db.String(256))
+    content = db.Column(db.Text)
+    # date post first published
+    date_published = db.Column(db.DateTime)
+    # Store year and month separately to allow for quick archive link generation
+    date_published_year = db.Column(db.Integer)
+    date_published_month = db.Column(db.Integer)
+    # date post updated
+    date_updated = db.Column(db.DateTime)
+    # status - draft = not public, publish = published on Internet
+    status = db.Column(db.String(25))
+    
+    authors = db.relationship('Author',
+                        secondary=post_author,
+                        backref="posts",
+                        lazy='dynamic')
+                        
+    
+    tags = db.relationship('Tag',
+                        secondary=post_tag,
+                        backref="posts",
+                        lazy='dynamic')
+                        
+    categories = db.relationship('Category',
+                        secondary=post_category,
+                        backref="posts",
+                        lazy='dynamic')
+    
+    #subsite e.g. ipchimp, ra, t
+    subsite = db.Column(db.String(25))
+    
+    def tag(self, tag):
+        """ Add passed tag to post."""
+        if not self.tagged(tag):
+            self.tags.append(tag)
+            return self
+        
+    def untag(self, tag):
+        """ Remove passed tag from post."""
+        if self.tagged(tag):
+            self.tags.remove(tag)
+            return self
+        
+    def tagged(self, tag):
+        """ Is tag assigned to post?"""
+        return self.tags.filter(post_tag.c.tag_id == tag.id).count() > 0
+        
+    def categorise(self, category):
+        """ Add passed category to post."""
+        if not self.categorised(category):
+            self.categories.append(category)
+            return self
+
+    def uncategorise(self, category):
+        """ Remove passed category from post."""
+        if self.categorised(category):
+            self.categories.remove(category)
+            return self
+        
+    def categorised(self, category):
+        """ Is category assigned to post? """
+        return self.categories.filter(post_category.c.category_id == category.id).count() > 0
+
+    
