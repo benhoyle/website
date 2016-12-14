@@ -25,7 +25,8 @@ def internal_error(exception):
     
 @app.route('/postwall', methods=['GET'])
 def postwall():
-    pass
+    posts = Post.query.order_by(Post.date_published.desc()).all()
+    return render_template('postwall.html', posts=posts)
     
 @app.route('/post/<nicename>', methods=['GET'])
 def post(nicename):

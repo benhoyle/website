@@ -197,6 +197,16 @@ class Post(Base):
         if author:
             self.authors.append(author)
             return self
+            
+    def get_excerpt(self):
+        """ Return excerpt if exists; if not create from content. """
+        if len(self.excerpt) > 1:
+            return self.excerpt
+        else:
+            try:
+                return self.content.splitlines()[0] + "..."
+            except:
+                return None
     
 
     
