@@ -4,11 +4,14 @@ import unittest
 import os
 
 #from .context import app, db, Post, Tag, Category, Author
-from wordpress_converter.parser import WPParser, WPFlaskParser
+
 
 from wordpress_converter import app, db
 
 from wordpress_converter.models import Post, Tag, Category, Author
+
+from wordpress_converter.parser import WPParser, WPFlaskParser
+
 
 # == /IMPORTS ============================================================#
 

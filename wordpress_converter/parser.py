@@ -5,8 +5,9 @@ import html
 
 from dateutil import parser
 
+from wordpress_converter import db
 
-from wordpress_converter import models as m
+from wordpress_converter.models import Post, Author, Category, Tag
 
 def attachment_tag_match(tag):
     """ Returns true if tag has a child with post_type = attachment. """
@@ -134,51 +135,51 @@ class WPFlaskParser:
         """ Save authors in the database. """
         xml_authors = self.soup.find_all("author")
         for xml_author in xml_authors:
-            if not m.Author.exists(xml_author.author_login.text):
-                new_db_author = m.Author(
-                    login=xml_author.author_login.text, 
+            if not Author.exists(xml_author.author_login.text):
+                new_db_author = Author(
+                    login = xml_author.author_login.text, 
                     email = xml_author.author_email.text,
                     display_name = html.unescape(xml_author.author_display_name.text),
                     first_name = html.unescape(xml_author.author_first_name.text),
                     last_name = html.unescape(xml_author.author_last_name.text)
                     )
-                m.db.session.add(new_db_author)
-                m.db.session.commit()
+                db.session.add(new_db_author)
+                db.session.commit()
     
     def save_tags(self):
         """ Save tags in the database."""
         xml_tags = self.soup.find_all("tag")
         for xml_tag in xml_tags:
-            if not m.Tag.exists(xml_tag.tag_slug.text):
-                new_db_tag = m.Tag(
+            if not Tag.exists(xml_tag.tag_slug.text):
+                new_db_tag = Tag(
                     nicename=xml_tag.tag_slug.text, 
                     display_name=html.unescape(xml_tag.tag_name.text)
                     )
-                m.db.session.add(new_db_tag)
-                m.db.session.commit()
+                db.session.add(new_db_tag)
+                db.session.commit()
         
     def save_categories(self):
         """ Save categories in the database. """
         xml_categories = self.soup.find_all(category_definition_match)
         for xml_category in xml_categories:
-            if not m.Category.exists(xml_category.category_nicename.text):
-                new_db_category = m.Category(
+            if not Category.exists(xml_category.category_nicename.text):
+                new_db_category = Category(
                     nicename=xml_category.category_nicename.text, 
                     display_name=html.unescape(xml_category.cat_name.text)
                     )
                 if xml_category.category_parent.text:
                     new_db_category = new_db_category.add_parent(xml_category.category_parent.text) 
-                m.db.session.add(new_db_category)
-                m.db.session.commit()
+                db.session.add(new_db_category)
+                db.session.commit()
         
     def save_posts(self):
         """ Save posts in the database. """
         posts = self.soup.find_all(post_tag_match)
         
         for post in posts:
-            if not m.Post.exists(post.post_name.text):
+            if not Post.exists(post.post_name.text):
                 post_date = parser.parse(post.pubDate.text)
-                new_db_post = m.Post(
+                new_db_post = Post(
                     display_title = post.title.text,
                     nicename = post.post_name.text,
                     content = html.unescape(post.encoded.text),
@@ -189,8 +190,8 @@ class WPFlaskParser:
                     date_updated = parser.parse(post.post_date.text),
                     status = post.status.text
                 )
-                m.db.session.add(new_db_post)
-                m.db.session.commit()
+                db.session.add(new_db_post)
+                db.session.commit()
                 
                 # Add author
                 new_db_post.add_author_by_login(post.creator.text)
@@ -202,5 +203,5 @@ class WPFlaskParser:
                     if tag_or_cat['domain'] == "category":
                         new_db_post.categorise_by_nicename(tag_or_cat['nicename'])
                 
-                m.db.session.commit()
+                db.session.commit()
                 
