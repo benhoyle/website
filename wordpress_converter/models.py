@@ -72,7 +72,7 @@ class Category(Base):
         
     def add_parent(self, parent_nicename):
         """ Adds parent category based on parent_nicename. """
-        parent_category = Category.query.filter(Category.nicename == nicename).first()
+        parent_category = Category.query.filter(Category.nicename == parent_nicename).first()
         if parent_category:
             self.parent = parent_category.id
         return self

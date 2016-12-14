@@ -130,6 +130,9 @@ class WPFlaskParser:
         with open(path_to_file, 'r') as f:
             filedata = f.read()
         self.soup = BeautifulSoup(filedata, "xml")
+        
+        # Initialise Database
+        db.create_all()
     
     def save_authors(self):
         """ Save authors in the database. """
@@ -204,4 +207,11 @@ class WPFlaskParser:
                         new_db_post.categorise_by_nicename(tag_or_cat['nicename'])
                 
                 db.session.commit()
+                
+    def save_all(self):
+        """ Save all to DB. """
+        self.save_authors()
+        self.save_tags()
+        self.save_categories()
+        self.save_posts()
                 

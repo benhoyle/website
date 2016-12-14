@@ -3,13 +3,14 @@
 {% block content %}
 
 <div id="postpage" class="row">
-    <div id="title" class="col-md-offset-1 col-lg-offset-2 col-md-10 col-lg-8">
-        <h2 class="test-center">
+    <div id="postcontainer" class="col-md-offset-1 col-lg-offset-2 col-md-10 col-lg-8">
+        <h2 id="title" class="test-center">
             {{ post.display_title }}
         </h2>
         <div id="categories" class="row">
             {% for category in post.categories %}
-            <code>&lt; {{ category.display_name }} &gt; </code>
+            <code>&lt;{{ category.display_name }}&gt; </code>
+            <span> </span>
             {% endfor %}
         </div>
         <div id="tags" class="row">
@@ -18,7 +19,7 @@
             {% endfor %}
         </div>
         <div id="post" class="row">
-            
+            {{ post.content|safe }}
         </div>
     </div>
 
@@ -29,10 +30,10 @@
 
 {% block footer %}
 <div id="post" class="row">
-     <p>
+     <p class="col-md-offset-1 col-lg-offset-2 col-md-10 col-lg-8">>
         Written by: 
         {% for author in post.authors %}
-            <span>{{ author.display_name }}</span>
+        <span>{{ author.display_name }}</span>
         {% endfor %}
     </p>
 </div>
