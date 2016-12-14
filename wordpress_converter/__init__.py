@@ -1,4 +1,4 @@
-from .core import WPParser
+#from .core import WPParser
 
 import os
 

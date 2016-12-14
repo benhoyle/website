@@ -1,14 +1,13 @@
-"""Tests for OAReview section of App."""
-
 # == IMPORTS =============================================================#
 import datetime
 import unittest
 import os
 
 #from .context import app, db, Post, Tag, Category, Author
+from wordpress_converter.parser import WPParser, WPFlaskParser
+
 from wordpress_converter import app, db
 
-#Import module models
 from wordpress_converter.models import Post, Tag, Category, Author
 
 # == /IMPORTS ============================================================#
@@ -26,6 +25,9 @@ class TestCase(unittest.TestCase):
         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
         self.app = app.test_client()
         db.create_all()
+        
+        # Setup parsers
+        self.flaskparser = WPFlaskParser(os.path.abspath(os.path.join(os.path.dirname(__file__), 'test.xml')))
 
 
     def tearDown(self):
@@ -73,6 +75,23 @@ class TestCase(unittest.TestCase):
         assert test_post.categories.count() == 1
         assert test_post.categories.first().nicename == "testcat"
 
+
+    def test_parse_tags_categories(self):
+        """ Check parsing of tags and categories. """
+        self.flaskparser.save_tags()
+        self.flaskparser.save_categories()
+        
+        # Get tags and categories
+        tags = Tag.query.all()
+        categories = Category.query.all()
+        
+        assert len(tags) == 2
+        assert tags[0].nicename == "test-tag-1"
+        assert tags[1].nicename == "testtag2"
+        
+        assert len(categories) == 2
+        assert categories[0].display_name == "Test Category 1"
+        assert categories[1].display_name == "Test Category 2"
 
 if __name__ == '__main__':
     try:

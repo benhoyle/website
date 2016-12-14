@@ -33,6 +33,7 @@ class Base(db.Model):
                 if isinstance(getattr(self, key), datetime) or str(self.__table__.c[key].type) == 'DATE':
                     value = datetime.strptime(value, "%d %B %Y")
                 setattr(self, key, value)
+                
 
 # Define post to tag association table
 post_tag = db.Table('post_tag', 
@@ -62,7 +63,19 @@ class Category(Base):
     
     # parent is id of another category - use custom method to return children
     # parent is referred to by nicename
-    parent = db.Column(db.Integer)
+    parent = db.Column(db.Integer, db.ForeignKey('category.id'))
+    
+    @staticmethod
+    def exists(nicename):
+        """ Check if a category with nicename already exists. """
+        return Category.query.filter(Category.nicename == nicename).count() > 0
+        
+    def add_parent(self, parent_nicename):
+        """ Adds parent category based on parent_nicename. """
+        parent_category = Category.query.filter(Category.nicename == nicename).first()
+        if parent_category:
+            self.parent = parent_category.id
+        return self
     
 class Tag(Base):
     """ Model for blog tags. """
@@ -71,6 +84,11 @@ class Tag(Base):
     nicename = db.Column(db.String(256))
     # Tag name with spaces and capitals
     display_name = db.Column(db.String(256))
+    
+    @staticmethod
+    def exists(nicename):
+        """ Check if a tag with nicename already exists. """
+        return Tag.query.filter(Tag.nicename == nicename).count() > 0
     
 class Author(Base):
     """ Model for blog authors. """
@@ -81,6 +99,11 @@ class Author(Base):
     first_name = db.Column(db.String(128))
     last_name = db.Column(db.String(128))
     
+    @staticmethod
+    def exists(login):
+        """ Check if a tag with nicename already exists. """
+        return Author.query.filter(Author.login == login).count() > 0
+    
 class Post(Base):
     """ Model for blog post. """
     __tablename__ = "post"
@@ -88,6 +111,8 @@ class Post(Base):
     # Post name in lower case with spaces replaced by dashes
     nicename = db.Column(db.String(256))
     content = db.Column(db.Text)
+    # Short post summary for display 
+    excerpt = db.Column(db.Text)
     # date post first published
     date_published = db.Column(db.DateTime)
     # Store year and month separately to allow for quick archive link generation
@@ -116,6 +141,11 @@ class Post(Base):
     
     #subsite e.g. ipchimp, ra, t
     subsite = db.Column(db.String(25))
+    
+    @staticmethod
+    def exists(nicename):
+        """ Check if a post with nicename already exists. """
+        return Post.query.filter(Post.nicename == nicename).count() > 0
     
     def tag(self, tag):
         """ Add passed tag to post."""

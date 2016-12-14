@@ -3,6 +3,8 @@ import os
 import requests
 import html
 
+from wordpress_converter import models as m
+
 def attachment_tag_match(tag):
     """ Returns true if tag has a child with post_type = attachment. """
     if hasattr(tag, "post_type"):
@@ -100,3 +102,43 @@ class WPParser:
         """ Build an HTML date index from files in foldername (e.g. "posts"). """
         # to do
         pass
+        
+class WPFlaskParser:
+    """ Class wrapper for parsing functions to create DB for Flask."""
+    
+    def __init__(self, path_to_file):
+        """ Initialise parser with the filename of a Wordpress export XML file. 
+            Output file is set by environment variable DATABASE_URL.
+            (As environment variable is used by Flask. """
+        with open(path_to_file, 'r') as f:
+            filedata = f.read()
+        self.soup = BeautifulSoup(filedata, "xml")
+    
+    def save_tags(self):
+        """ Save tags in the database."""
+        xml_tags = self.soup.find_all("tag")
+        for xml_tag in xml_tags:
+            if not m.Tag.exists(xml_tag.tag_slug.text):
+                new_db_tag = m.Tag(
+                    nicename=xml_tag.tag_slug.text, 
+                    display_name=html.unescape(xml_tag.tag_name.text)
+                    )
+                m.db.session.add(new_db_tag)
+                m.db.session.commit()
+        
+    def save_categories(self):
+        """ Save categories in the database. """
+        xml_categories = self.soup.find_all("category")
+        for xml_category in xml_categories:
+            if not m.Category.exists(xml_category.category_nicename.text):
+                new_db_category = m.Category(
+                    nicename=xml_category.category_nicename.text, 
+                    display_name=html.unescape(xml_category.cat_name.text)
+                    )
+                if xml_category.category_parent.text:
+                    new_db_category = new_db_category.add_parent(xml_category.category_parent.text) 
+                m.db.session.add(new_db_category)
+                m.db.session.commit()
+        
+    def save_posts(self):
+        """ Save posts in the database. """
