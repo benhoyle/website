@@ -147,6 +147,12 @@ class Post(Base):
         """ Check if a post with nicename already exists. """
         return Post.query.filter(Post.nicename == nicename).count() > 0
     
+    def tag_by_nicename(self, tag_nicename):
+        """ Add tag based on nicename. """
+        tag = Tag.query.filter(Tag.nicename == tag_nicename).first()
+        if tag:
+            return self.tag(tag)
+    
     def tag(self, tag):
         """ Add passed tag to post."""
         if not self.tagged(tag):
@@ -162,6 +168,12 @@ class Post(Base):
     def tagged(self, tag):
         """ Is tag assigned to post?"""
         return self.tags.filter(post_tag.c.tag_id == tag.id).count() > 0
+    
+    def categorise_by_nicename(self, cat_nicename):
+        """ Add tag based on nicename. """
+        category = Category.query.filter(Category.nicename == cat_nicename).first()
+        if category:
+            return self.categorise(category)
         
     def categorise(self, category):
         """ Add passed category to post."""
@@ -178,5 +190,13 @@ class Post(Base):
     def categorised(self, category):
         """ Is category assigned to post? """
         return self.categories.filter(post_category.c.category_id == category.id).count() > 0
+        
+    def add_author_by_login(self, login):
+        """ Add tag based on nicename. """
+        author = Author.query.filter(Author.login == login).first()
+        if author:
+            self.authors.append(author)
+            return self
+    
 
     

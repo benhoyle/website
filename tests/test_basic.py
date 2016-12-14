@@ -92,6 +92,23 @@ class TestCase(unittest.TestCase):
         assert len(categories) == 2
         assert categories[0].display_name == "Test Category 1"
         assert categories[1].display_name == "Test Category 2"
+        
+    def test_parse_posts(self):
+        """ Check parsing of posts. """
+        
+        self.flaskparser.save_authors()
+        self.flaskparser.save_tags()
+        self.flaskparser.save_categories()
+        
+        self.flaskparser.save_posts()
+        
+        posts = Post.query.all()
+        
+        assert len(posts) > 0
+        assert len(posts[0].content) > 0
+        assert posts[0].tags.count() == 2
+        assert posts[0].categories[0].nicename == "testcat1"
+        assert posts[0].authors[0].last_name == "Author"
 
 if __name__ == '__main__':
     try:
