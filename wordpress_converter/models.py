@@ -76,6 +76,13 @@ class Category(Base):
         if parent_category:
             self.parent = parent_category.id
         return self
+        
+    #@classmethod
+    #def get_posts_by_category(cls, category_nicename):
+        #""" Return posts having category."""
+        #catergory_id = cls.query.filter(cls.nicename == category_nicename).first()
+        #if category_id:
+            #return db.session.query(post_category).join(Post, (Post.id == post_category.c.post_id)).filter(post_category.c.category_id == category_id).all()
     
 class Tag(Base):
     """ Model for blog tags. """
@@ -125,18 +132,18 @@ class Post(Base):
     
     authors = db.relationship('Author',
                         secondary=post_author,
-                        backref="posts",
+                        backref=db.backref('posts', lazy='dynamic'),
                         lazy='dynamic')
                         
     
     tags = db.relationship('Tag',
                         secondary=post_tag,
-                        backref="posts",
+                        backref=db.backref('posts', lazy='dynamic'),
                         lazy='dynamic')
                         
     categories = db.relationship('Category',
                         secondary=post_category,
-                        backref="posts",
+                        backref=db.backref('posts', lazy='dynamic'),
                         lazy='dynamic')
     
     #subsite e.g. ipchimp, ra, t
@@ -208,5 +215,5 @@ class Post(Base):
             except:
                 return None
     
-
+    
     

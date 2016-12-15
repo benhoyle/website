@@ -5,7 +5,7 @@
 <div id="postwall" class="row">
     <div id="postwallcontainer" class="col-xs-offset-1 col-lg-offset-2 col-xs-10 col-lg-8">
         <h2 class="text-center">
-            Wall of Posts
+            Wall of Posts {% if category is defined %} <small>- Category: '{{ category.display_name }}'</small>{% endif %}
         </h2>
         <p class="top-padding">Here are the posts, arranged in descending date order.</p>
         <div id="postcells" class="">

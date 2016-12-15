@@ -33,6 +33,18 @@ def post(nicename):
     post = Post.query.filter(Post.nicename == nicename).first()
     return render_template('post.html', post=post)
 
+@app.route('/categories', methods=['GET'])
+def show_categories():
+    #Just list all categories
+    categories = Category.query.order_by(Category.display_name.asc()).all()
+    return render_template('categories.html', categories=categories)
+
+@app.route('/postwall/category/<category_nicename>', methods=['GET'])
+def category_postwall(category_nicename):
+    category = Category.query.filter(Category.nicename == category_nicename).first()
+    posts = category.posts.order_by(Post.date_published.desc()).all()
+    return render_template('postwall.html', posts=posts, category=category)
+
 # Configure lines
 import logging
 from logging.handlers import RotatingFileHandler
