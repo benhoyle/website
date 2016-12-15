@@ -35,7 +35,6 @@ def post(nicename):
 
 @app.route('/categories', methods=['GET'])
 def show_categories():
-    #Just list all categories
     categories = Category.query.order_by(Category.display_name.asc()).all()
     return render_template('categories.html', categories=categories)
 
@@ -44,6 +43,17 @@ def category_postwall(category_nicename):
     category = Category.query.filter(Category.nicename == category_nicename).first()
     posts = category.posts.order_by(Post.date_published.desc()).all()
     return render_template('postwall.html', posts=posts, category=category)
+    
+@app.route('/tags', methods=['GET'])
+def show_tags():
+    tags = Tag.query.order_by(Tag.display_name.asc()).all()
+    return render_template('tags.html', tags=tags)
+
+@app.route('/postwall/tag/<tag_nicename>', methods=['GET'])
+def tag_postwall(tag_nicename):
+    tag = Tag.query.filter(Tag.nicename == tag_nicename).first()
+    posts = tag.posts.order_by(Post.date_published.desc()).all()
+    return render_template('postwall.html', posts=posts, tag=tag)
 
 # Configure lines
 import logging

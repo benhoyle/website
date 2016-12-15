@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div id="postwall" class="row">
+    <div id="postwallcontainer" class="col-xs-offset-1 col-lg-offset-2 col-xs-10 col-lg-8">
+        <h2 class="text-center">
+            Tags
+        </h2>
+        <p class="top-padding">Here are the post tags, arranged in alphabetical order.</p>
+        <div id="tags" class="text-justify">
+            {% for tag in tags %}
+                <span style="font-size: {{ 100+5*tag.posts.count() }}%;"><a href={{url_for('tag_postwall', tag_nicename=tag.nicename)}}>&#35;{{ tag.display_name }}</a></span>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+
+
+{% endblock %}
+
+{% block footer %}
+{% endblock %}
