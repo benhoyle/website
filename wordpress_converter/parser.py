@@ -214,4 +214,17 @@ class WPFlaskParser:
         self.save_tags()
         self.save_categories()
         self.save_posts()
+        
+    def convert_file_links(self, foldername):
+        """ Process HTML files in foldername and replace Wordpress URLs with 
+        local urls to 'files' directory. """
+        # to do
+        pass
+        
+    def convert_wp_markup(self, foldername):
+        """ Process posts to convert Wordpress markup. """
+        # to do
+        # Found within square brackets - [] (although not all square brackets may be markup
+        # Found so far: slideshare, caption, code
+        pass
                 
