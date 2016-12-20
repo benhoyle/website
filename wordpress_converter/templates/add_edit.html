@@ -1,0 +1,42 @@
+{% extends 'navbar.html' %}
+
+{% block content %}
+
+<div id="postpage" class="row">
+    <div id="postcontainer" class="form-group col-xs-offset-1 col-lg-offset-2 col-xs-10 col-lg-8">
+        <h2 id="title" class="text-center top-padding">
+            {{ form.display_title(class_="form-control col-xs-12") }}
+        </h2>
+        {#
+        <div id="categories" class="row top-padding">
+            {% for category in post.categories %}
+            <code class="category-margin"><a href={{url_for('category_postwall', category_nicename=category.nicename)}}>&lt;{{ category.display_name }}&gt;</a></code>
+            {% endfor %}
+        </div>
+        <div id="tags" class="row top-padding">
+            {% for tag in post.tags %}
+            <small class="category-margin"><a href={{url_for('tag_postwall', tag_nicename=tag.nicename)}}>&#35;{{ tag.display_name }}</a></small>
+            {% endfor %}
+        </div>
+        #}
+        <div id="post" class="top-padding ">
+            {{ form.content(class_="form-control col-xs-12", rows="20") }}
+        </div>
+        {{ form.enter_button(class_="btn btn-default btn-block") }}
+    </div>
+
+</div>
+
+
+{% endblock %}
+
+{% block footer %}
+{#<div id="post" class="row big-top-padding">
+     <p><em class="col-xs-offset-1 col-lg-offset-2 col-xs-10 col-lg-8">
+        By: 
+        {% for author in post.authors %}
+        <span>{{ author.display_name }}</span>
+        {% endfor %}
+    </em></p>
+</div>#}
+{% endblock %}

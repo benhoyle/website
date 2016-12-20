@@ -3,7 +3,7 @@
 import os
 
 # Import flask and template operators
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 
 # Import SQLAlchemy
 from flask_sqlalchemy import SQLAlchemy
@@ -12,6 +12,9 @@ from wordpress_converter import app, db
 
 # Import models
 from wordpress_converter.models import Post, Tag, Category, Author
+
+# Import forms
+from wordpress_converter.forms import PostForm 
 
 # Sample HTTP error handling
 @app.errorhandler(404)
@@ -33,6 +36,17 @@ def show_posts():
 def post(nicename):
     post = Post.query.filter(Post.nicename == nicename).first()
     return render_template('post.html', post=post)
+    
+@app.route('/posts/<nicename>/edit', methods=['GET'])
+def edit_post(nicename):
+    post = Post.query.filter(Post.nicename == nicename).first()
+    form = PostForm(request.form, post)
+    return render_template('add_edit.html', form=form)
+    
+@app.route('/posts/add', methods=['GET'])
+def add_post():
+    
+    return render_template('add_edit.html', post=post)
 
 @app.route('/categories', methods=['GET'])
 def show_categories():
