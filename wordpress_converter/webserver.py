@@ -84,4 +84,4 @@ if app.debug is not True:
 
 # Run app for apache deployment    
 if __name__ == "__main__":
-    app.run()
+    app.run(host=os.environ.get("HOST"))
