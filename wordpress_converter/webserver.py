@@ -23,12 +23,13 @@ def internal_error(exception):
     app.logger.error(exception)
     return render_template('500.html'), 500
     
-@app.route('/postwall', methods=['GET'])
-def postwall():
+@app.route('/posts', methods=['GET'])
+@app.route('/', methods=['GET'])
+def show_posts():
     posts = Post.query.order_by(Post.date_published.desc()).all()
     return render_template('postwall.html', posts=posts)
     
-@app.route('/post/<nicename>', methods=['GET'])
+@app.route('/posts/<nicename>', methods=['GET'])
 def post(nicename):
     post = Post.query.filter(Post.nicename == nicename).first()
     return render_template('post.html', post=post)
@@ -38,7 +39,7 @@ def show_categories():
     categories = Category.query.order_by(Category.display_name.asc()).all()
     return render_template('categories.html', categories=categories)
 
-@app.route('/postwall/category/<category_nicename>', methods=['GET'])
+@app.route('/categories/<category_nicename>', methods=['GET'])
 def category_postwall(category_nicename):
     category = Category.query.filter(Category.nicename == category_nicename).first()
     posts = category.posts.order_by(Post.date_published.desc()).all()
@@ -49,7 +50,7 @@ def show_tags():
     tags = Tag.query.order_by(Tag.display_name.asc()).all()
     return render_template('tags.html', tags=tags)
 
-@app.route('/postwall/tag/<tag_nicename>', methods=['GET'])
+@app.route('/tags/<tag_nicename>', methods=['GET'])
 def tag_postwall(tag_nicename):
     tag = Tag.query.filter(Tag.nicename == tag_nicename).first()
     posts = tag.posts.order_by(Post.date_published.desc()).all()
