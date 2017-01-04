@@ -76,7 +76,7 @@ def login():
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for('login'))
+    return redirect(url_for('show_posts'))
 
 @app.route('/posts', methods=['GET'])
 @app.route('/', methods=['GET'])
@@ -87,6 +87,8 @@ def show_posts():
 @app.route('/posts/<nicename>', methods=['GET'])
 def post(nicename):
     post = Post.query.filter(Post.nicename == nicename).first()
+    if not post:
+        return redirect(url_for('show_posts'))
     return render_template('post.html', post=post)
     
 @app.route('/posts/<nicename>/edit', methods=['GET', 'POST'])
