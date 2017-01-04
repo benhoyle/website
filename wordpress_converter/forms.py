@@ -9,3 +9,8 @@ class PostForm(Form):
     content = TextAreaField(label="Post Text", description="Type post content here", validators=[DataRequired()])
     
     enter_button = SubmitField(label="Save")
+    
+class DeleteConfirm(Form):
+    """ Short form to work as a confirm delete modal button. """
+    confirm_delete = SubmitField(label='Confirm Delete')
+    cancel = SubmitField(label='Cancel')

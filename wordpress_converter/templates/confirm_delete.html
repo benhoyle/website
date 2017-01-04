@@ -1,0 +1,16 @@
+{% extends 'navbar.html' %}
+
+{% block content %}
+<div id="postpage" class="row">
+    <form method="post" class="form-inline">
+        <div id="postcontainer" class="form-group col-xs-offset-1 col-lg-offset-2 col-xs-10 col-lg-8">
+            {{ form.csrf_token }}
+            <h3 class="text-center top-padding">Are you sure you want to delete post:</br>"{{ post.display_title }}"?</h4>
+            <div class="text-center top-padding">
+                {{ form.confirm_delete(class_="btn btn-danger form-control")}}
+                {{ form.cancel(class_="btn btn-default form-control") }}
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -16,7 +16,7 @@ from wordpress_converter import app, db
 from wordpress_converter.models import Post, Tag, Category, Author
 
 # Import forms
-from wordpress_converter.forms import PostForm 
+from wordpress_converter.forms import PostForm, DeleteConfirm
 
 # Sample HTTP error handling
 @app.errorhandler(404)
@@ -45,7 +45,7 @@ def edit_post(nicename):
     if not post:
         return redirect(url_for('show_posts'))
     form = PostForm(request.form, post)
-    if post and form.validate_on_submit():
+    if form.validate_on_submit():
         form.populate_obj(post)
         post.make_nicename()
         db.session.add(post)
@@ -70,6 +70,21 @@ def add_post():
         db.session.commit()
         return redirect(url_for('post', nicename=post.nicename))
     return render_template('add_edit.html', form=form)
+
+@app.route('/posts/<nicename>/delete', methods=['GET', 'POST'])
+def delete_post(nicename):
+    post = Post.query.filter(Post.nicename == nicename).first()
+    if not post:
+        return redirect(url_for('show_posts'))
+    form = DeleteConfirm(request.form)
+    if form.validate_on_submit():
+        if form.confirm_delete.data:
+            db.session.delete(post)
+            db.session.commit()
+            return redirect(url_for('show_posts'))
+        if form.cancel.data:
+            return redirect(url_for('post', nicename=post.nicename))
+    return render_template('confirm_delete.html', post=post, form=form)
 
 @app.route('/categories', methods=['GET'])
 def show_categories():
