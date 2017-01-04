@@ -88,6 +88,11 @@ class Category(Base):
         #if category_id:
             #return db.session.query(post_category).join(Post, (Post.id == post_category.c.post_id)).filter(post_category.c.category_id == category_id).all()
     
+    @classmethod
+    def get_category_names(cls):
+        """ Return list of tuples (nicename, display_name) for existing tags. """
+        return [(c.nicename, c.display_name) for c in cls.query.order_by('display_name').all()]
+    
 class Tag(Base):
     """ Model for blog tags. """
     __tablename__ = "tag"
@@ -100,6 +105,11 @@ class Tag(Base):
     def exists(nicename):
         """ Check if a tag with nicename already exists. """
         return Tag.query.filter(Tag.nicename == nicename).count() > 0
+        
+    @classmethod
+    def get_tag_names(cls):
+        """ Return list of tuples (nicename, display_name) for existing tags. """
+        return [(tag.nicename, tag.display_name) for tag in cls.query.order_by('display_name').all()]
     
 class Author(Base):
     """ Model for blog authors. """
@@ -139,6 +149,7 @@ class Author(Base):
     def save_password(self, password):
         """ Store hashed password. """
         self.password = generate_password_hash(password)
+    
     
 class Post(Base):
     """ Model for blog post. """
@@ -249,5 +260,11 @@ class Post(Base):
             except:
                 return None
     
-    
+    def get_tag_nicenames(self):
+        """ Get nicenames of post tags. """
+        return [tag.nicename for tag in self.tags]
+        
+    def get_category_nicenames(self):
+        """ Get nicenames of post tags. """
+        return [cat.nicename for cat in self.categories]
     

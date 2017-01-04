@@ -10,3 +10,14 @@ wpc.get_files()
 # Convert posts to HTML and save to "posts" folder
 wpc.posts_to_html()
 ```
+
+
+## Setup Passwords for Existing Authors
+
+The import process should add the authors from the XML file.
+
+To set author/user passwords (to allow logins and add/edit/delete functions), 
+run from the command line:
+```python -m wordpress_converter.set_password```
+This will then prompt for the login name of an author and give you the chance
+to enter a password.

@@ -96,9 +96,20 @@ def edit_post(nicename):
     if not post:
         return redirect(url_for('show_posts'))
     form = PostForm(request.form, post)
+    form.categories.choices = Category.get_category_names()
+    form.tags.choices = Tag.get_tag_names()
+    if request.method == "GET":
+        # Preselect tags and categories
+        form.categories.process_data(post.get_category_nicenames())
+        form.tags.process_data(post.get_tag_nicenames())
     if form.validate_on_submit():
-        form.populate_obj(post)
+        post.display_title = form.display_title.data
+        post.content = form.content.data
         post.make_nicename()
+        for category in form.categories.data:
+            post.categorise_by_nicename(category)
+        for tag in form.tags.data:
+            post.tag_by_nicename(tag)
         db.session.add(post)
         db.session.commit()
         return redirect(url_for('post', nicename=post.nicename))
@@ -108,6 +119,8 @@ def edit_post(nicename):
 @login_required
 def add_post():
     form = PostForm()
+    form.categories.choices = Category.get_category_names()
+    form.tags.choices = Tag.get_tag_names()
     if form.validate_on_submit():
         post = Post()
         post.display_title = form.display_title.data 
@@ -117,6 +130,10 @@ def add_post():
         date_published_month = post.date_published.month
         post.status = "publish"
         post.excerpt = ""
+        for category in form.categories.data:
+            post.categorise_by_nicename(category)
+        for tag in form.tags.data:
+            post.tag_by_nicename(tag)
         post.add_author_by_login(g.user.login)
         post.make_nicename()
         db.session.add(post)
