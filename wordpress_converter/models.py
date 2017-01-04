@@ -4,6 +4,7 @@ from datetime import datetime
 
 from wordpress_converter import db
 
+import re
 
 class Base(db.Model):
     """ Extensions to Base class. """
@@ -148,6 +149,11 @@ class Post(Base):
     
     #subsite e.g. ipchimp, ra, t
     subsite = db.Column(db.String(25))
+    
+    def make_nicename(self):
+        """Generate the nicename from the display title"""
+        no_punct = re.sub(r'[^\w\s]', '', self.display_title.lower().strip())
+        self.nicename = re.sub(r'\s+', '-', no_punct)
     
     @staticmethod
     def exists(nicename):
