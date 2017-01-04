@@ -1,6 +1,6 @@
 from flask_wtf import Form
-from wtforms import StringField, TextAreaField, SubmitField
-from wtforms.validators import DataRequired
+from wtforms import StringField, TextAreaField, SubmitField, TextField, PasswordField, BooleanField
+from wtforms.validators import DataRequired, Required, EqualTo, Email
 
 class PostForm(Form):
     """ Form for adding and editing a post. """
@@ -14,3 +14,18 @@ class DeleteConfirm(Form):
     """ Short form to work as a confirm delete modal button. """
     confirm_delete = SubmitField(label='Confirm Delete')
     cancel = SubmitField(label='Cancel')
+
+class LoginForm(Form):
+    """ Define the login form. """
+    login = TextField('User login', [Required(message='Forgot your login name?')])
+    password = PasswordField('Password', [Required(message='Must provide a password. ;-)')])
+    remember_me = BooleanField('remember_me', default=False)
+
+class SignupForm(Form):
+    """ Define the form for registering a user."""
+    login  = TextField('Login name', [Required()])
+    firstname = TextField('First Name', [Required()])
+    surname   = TextField('Surname', [Required()])
+    email     = TextField('Email Address', [Email(), Required()])
+    password  = PasswordField('New Password', [Required(), EqualTo('confirm', message='Passwords must match')])
+    confirm   = PasswordField('Repeat Password')

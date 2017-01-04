@@ -5,10 +5,14 @@ import os
 import datetime
 
 # Import flask and template operators
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, \
+                    g, session, flash
 
 # Import SQLAlchemy
 from flask_sqlalchemy import SQLAlchemy
+
+# Import Login Manager
+from flask_login import LoginManager, login_user, logout_user, current_user, login_required
 
 from wordpress_converter import app, db
 
@@ -16,7 +20,7 @@ from wordpress_converter import app, db
 from wordpress_converter.models import Post, Tag, Category, Author
 
 # Import forms
-from wordpress_converter.forms import PostForm, DeleteConfirm
+from wordpress_converter.forms import PostForm, DeleteConfirm, LoginForm
 
 # Sample HTTP error handling
 @app.errorhandler(404)
@@ -27,7 +31,53 @@ def not_found(error):
 def internal_error(exception):
     app.logger.error(exception)
     return render_template('500.html'), 500
+
+# Start login manager
+lm = LoginManager()
+lm.init_app(app)
+lm.login_view = 'login'
+
+# Login manager user loader
+@lm.user_loader
+def load_user(id):
+    return Author.query.get(int(id))
     
+@app.before_request
+def before_request():
+    g.user = current_user
+    
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    # If user is already logged in go straight to homepage
+    if g.user is not None and g.user.is_authenticated:
+        return redirect(url_for('show_posts'))
+    # Generate login form
+    form = LoginForm(request.form)
+
+    # Verify the sign in form
+    if form.validate_on_submit():
+        session['remember_me'] = form.remember_me.data
+        
+        user = Author.query.filter(Author.login==form.login.data).first()
+        if user and user.check_password(form.password.data):
+            session['user_id'] = user.id
+            remember_me = False
+            if 'remember_me' in session:
+                remember_me = session['remember_me']
+                session.pop('remember_me', None)
+            login_user(user, remember = remember_me)
+            flash('Welcome %s' % user.display_name)
+            return redirect(url_for('show_posts'))
+        flash('Wrong email or password', 'error-message')
+
+    return render_template("login.html", form=form)
+    
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
+
 @app.route('/posts', methods=['GET'])
 @app.route('/', methods=['GET'])
 def show_posts():
@@ -40,6 +90,7 @@ def post(nicename):
     return render_template('post.html', post=post)
     
 @app.route('/posts/<nicename>/edit', methods=['GET', 'POST'])
+@login_required
 def edit_post(nicename):
     post = Post.query.filter(Post.nicename == nicename).first()
     if not post:
@@ -54,6 +105,7 @@ def edit_post(nicename):
     return render_template('add_edit.html', form=form)
     
 @app.route('/posts/add', methods=['GET', 'POST'])
+@login_required
 def add_post():
     form = PostForm()
     if form.validate_on_submit():
@@ -65,6 +117,7 @@ def add_post():
         date_published_month = post.date_published.month
         post.status = "publish"
         post.excerpt = ""
+        post.add_author_by_login(g.user.login)
         post.make_nicename()
         db.session.add(post)
         db.session.commit()
@@ -72,6 +125,7 @@ def add_post():
     return render_template('add_edit.html', form=form)
 
 @app.route('/posts/<nicename>/delete', methods=['GET', 'POST'])
+@login_required
 def delete_post(nicename):
     post = Post.query.filter(Post.nicename == nicename).first()
     if not post:

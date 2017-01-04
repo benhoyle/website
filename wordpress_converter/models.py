@@ -6,6 +6,9 @@ from wordpress_converter import db
 
 import re
 
+# Import security helper functions
+from werkzeug.security import generate_password_hash, check_password_hash
+
 class Base(db.Model):
     """ Extensions to Base class. """
 
@@ -106,11 +109,36 @@ class Author(Base):
     display_name = db.Column(db.String(256))
     first_name = db.Column(db.String(128))
     last_name = db.Column(db.String(128))
+    password = db.Column(db.String(256))
     
     @staticmethod
     def exists(login):
         """ Check if a tag with nicename already exists. """
         return Author.query.filter(Author.login == login).count() > 0
+    
+    @property
+    def is_authenticated(self):
+        return True
+
+    @property
+    def is_active(self):
+        return True
+
+    @property
+    def is_anonymous(self):
+        return False
+    
+    def get_id(self):
+        """ Required method for login manager support. """
+        return self.id
+    
+    def check_password(self, password):
+        """Check password using security functions."""
+        return check_password_hash(self.password, password)
+        
+    def save_password(self, password):
+        """ Store hashed password. """
+        self.password = generate_password_hash(password)
     
 class Post(Base):
     """ Model for blog post. """
