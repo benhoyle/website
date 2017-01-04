@@ -81,12 +81,22 @@ def logout():
 @app.route('/posts', methods=['GET'])
 @app.route('/', methods=['GET'])
 def show_posts():
-    posts = Post.query.order_by(Post.date_published.desc()).all()
+    posts = Post.query.filter(Post.status=="publish").order_by(Post.date_published.desc()).all()
     return render_template('postwall.html', posts=posts)
-    
+
+@app.route('/posts/drafts', methods=['GET'])
+def show_drafts():
+    posts = Post.query.filter(Post.status=="draft").order_by(Post.date_updated.desc()).all()
+    return render_template('postwall.html', posts=posts)
+
 @app.route('/posts/<nicename>', methods=['GET'])
 def post(nicename):
-    post = Post.query.filter(Post.nicename == nicename).first()
+    if g.user is not None and g.user.is_authenticated:
+        # Show drafts as well as published posts
+        post = Post.query.filter(Post.nicename == nicename).first()
+    else:
+        # Only show published posts
+        post = Post.query.filter(Post.status=="publish").filter(Post.nicename == nicename).first()
     if not post:
         return redirect(url_for('show_posts'))
     return render_template('post.html', post=post)
@@ -105,6 +115,17 @@ def edit_post(nicename):
         form.categories.process_data(post.get_category_nicenames())
         form.tags.process_data(post.get_tag_nicenames())
     if form.validate_on_submit():
+        if form.cancel.data:
+            return redirect(url_for('post', nicename=post.nicename))
+        if form.save_as_draft_button.data:
+            post.status = "draft"
+        if form.publish_button.data:
+            post.status = "publish"
+            if not post.date_published:
+                post.date_published = datetime.datetime.now()
+                date_published_year = post.date_published.year
+                date_published_month = post.date_published.month
+        post.date_updated = datetime.datetime.now()
         post.display_title = form.display_title.data
         post.content = form.content.data
         post.make_nicename()
@@ -124,21 +145,31 @@ def add_post():
     form.categories.choices = Category.get_category_names()
     form.tags.choices = Tag.get_tag_names()
     if form.validate_on_submit():
+        if form.cancel.data:
+            return redirect(url_for('post', nicename=post.nicename))
+        
         post = Post()
         post.display_title = form.display_title.data 
         post.content = form.content.data
-        post.date_published = datetime.datetime.now()
-        date_published_year = post.date_published.year
-        date_published_month = post.date_published.month
-        post.status = "publish"
+        post.date_updated = datetime.datetime.now()
+        post.make_nicename()
+        if form.save_as_draft_button.data:
+            post.status = "draft"
+        if form.publish_button.data:
+            post.status = "publish"
+            post.date_published = datetime.datetime.now()
+            date_published_year = post.date_published.year
+            date_published_month = post.date_published.month
         post.excerpt = ""
+        
+        db.session.add(post)
         for category in form.categories.data:
             post.categorise_by_nicename(category)
         for tag in form.tags.data:
             post.tag_by_nicename(tag)
         post.add_author_by_login(g.user.login)
-        post.make_nicename()
-        db.session.add(post)
+        
+        
         db.session.commit()
         return redirect(url_for('post', nicename=post.nicename))
     return render_template('add_edit.html', form=form)
@@ -167,7 +198,7 @@ def show_categories():
 @app.route('/categories/<category_nicename>', methods=['GET'])
 def category_postwall(category_nicename):
     category = Category.query.filter(Category.nicename == category_nicename).first()
-    posts = category.posts.order_by(Post.date_published.desc()).all()
+    posts = category.posts.filter(Post.status=="publish").order_by(Post.date_published.desc()).all()
     return render_template('postwall.html', posts=posts, category=category)
     
 @app.route('/tags', methods=['GET'])
@@ -178,7 +209,7 @@ def show_tags():
 @app.route('/tags/<tag_nicename>', methods=['GET'])
 def tag_postwall(tag_nicename):
     tag = Tag.query.filter(Tag.nicename == tag_nicename).first()
-    posts = tag.posts.order_by(Post.date_published.desc()).all()
+    posts = tag.posts.filter(Post.status=="publish").order_by(Post.date_published.desc()).all()
     return render_template('postwall.html', posts=posts, tag=tag)
 
 # Configure lines

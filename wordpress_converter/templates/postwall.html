@@ -13,7 +13,13 @@
         <div id="postcells" class="">
         {% for post in posts %}
             <div id="postcell" class="top-padding">
-                <h4><a href= {{ url_for('post', nicename=post.nicename) }} >{{ post.display_title }}</a> <small>- {{ post.date_published.strftime('%-d %B %Y') }}</small></h4>
+                <h4><a href= {{ url_for('post', nicename=post.nicename) }} >{{ post.display_title }}</a> 
+                {% if post.date_published %}
+                <small>- 
+                {{ post.date_published.strftime('%-d %B %Y') }}
+                </small>
+                {% endif %}
+                </h4>
                 
                 <p class="postwalltext"> 
                     {{ post.get_excerpt() | striptags }}

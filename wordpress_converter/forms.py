@@ -10,7 +10,9 @@ class PostForm(Form):
     tags = SelectMultipleField("Tags")
     content = TextAreaField(label="Post Text", description="Type post content here", validators=[DataRequired()])
     
-    enter_button = SubmitField(label="Save")
+    publish_button = SubmitField(label="Publish")
+    save_as_draft_button = SubmitField(label="Save As Draft")
+    cancel = SubmitField(label='Cancel')
     
 class DeleteConfirm(Form):
     """ Short form to work as a confirm delete modal button. """

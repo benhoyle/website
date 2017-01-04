@@ -21,6 +21,8 @@
         {% if g.user.is_authenticated %}
         <ul class="nav navbar-nav navbar-right">
             <li><a href="">{{ g.user.login }} AKA {{ g.user.display_name }}</a></li>
+            <li><a href="{{ url_for('add_post') }}">New Post</a></li>
+            <li><a href="{{ url_for('show_drafts') }}">Drafts</a></li>
             <li><a href="{{ url_for('logout') }}">Logout</a></li>
         </ul>
         {% endif %}

@@ -31,8 +31,10 @@
                     {{ form.tags(class_="form-control") }}
                 </div>
             </div>
-            <div class="form-group">
-            {{ form.enter_button(class_="btn btn-default btn-block form-control") }}
+            <div class="text-center">
+            {{ form.publish_button(class_="btn btn-success") }}
+            {{ form.save_as_draft_button(class_="btn btn-primary") }}
+            {{ form.cancel(class_="btn btn-default") }}
             </div>
         </div>
     </form>
