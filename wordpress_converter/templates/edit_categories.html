@@ -4,24 +4,25 @@
 
 {% block content %}
 
-<div id="mergedelete" class="row">
-    <div id="mergedeletecontainer" class="col-xs-offset-1 col-lg-offset-2 col-xs-10 col-lg-8">
-        <form method="POST" id="merge_delete_form">
-            {{ merge_delete_form.csrf_token }}
+<div id="edit" class="row">
+    <div id="editcontainer" class="col-xs-offset-1 col-lg-offset-2 col-xs-10 col-lg-8">
+        <form method="POST" id="edit_form">
+            {{ edit_form.csrf_token }}
             <h4 class="text-center">
-                <b>Select Categories to Merge or Delete</b>
+                <b>Select Category to Edit</b>
             </h4>
-            <p>Hold down <kbd>CTRL</kbd> to select multiple categories.</p>
             <div class="form-group">
-            {{ merge_delete_form.categories(class_="form-control", size="15")  }}
-            {% for error in merge_delete_form.categories.errors %}
-                <span class="text-center" style="color: red;"><b>[{{ error }}]</b></span>
-            {% endfor %}
+            {{ edit_form.categories(class_="form-control", size="15")  }}
+            </div>
+            <div class="form-group">
+                <h4 class="text-center">
+                    <b>Enter new name for selected category</b>
+                </h4>
+                {{ edit_form.cat_edit_box(class_="form-control")  }}
             </div>
             <div class="form-group text-center">
-            {{ merge_delete_form.merge_button(class_="btn btn-primary") }}
-            {{ merge_delete_form.delete_button(class_="btn btn-danger") }}
-            {{ merge_delete_form.cancel_button(class_="btn btn-default") }}
+            {{ edit_form.edit_button(class_="btn btn-default") }}
+            {{ edit_form.cancel_button(class_="btn btn-default") }}
             </div>
         </form>
     </div>

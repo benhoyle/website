@@ -21,7 +21,7 @@ from wordpress_converter.models import Post, Tag, Category, Author
 
 # Import forms
 from wordpress_converter.forms import PostForm, DeleteConfirm, LoginForm, \
-                                        AddCategoryForm, EditCategoriesForm, \
+                                        AddCategoryForm, EditCategoryForm, \
                                         MergeDeleteCategoryForm
 
 # Sample HTTP error handling
@@ -131,10 +131,18 @@ def edit_post(nicename):
         post.display_title = form.display_title.data
         post.content = form.content.data
         post.make_nicename()
+        # Need to add here removal of category
+        for category in post.categories:
+            if category.nicename not in form.categories.data:
+                post.uncategorise(category)
         for category in form.categories.data:
             post.categorise_by_nicename(category)
+        for tag in post.tags:
+            if tag.nicename not in form.tags.data:
+                post.untag(tag)
         for tag in form.tags.data:
             post.tag_by_nicename(tag)
+        
         db.session.add(post)
         db.session.commit()
         return redirect(url_for('post', nicename=post.nicename))
@@ -165,6 +173,7 @@ def add_post():
         post.excerpt = ""
         
         db.session.add(post)
+        
         for category in form.categories.data:
             post.categorise_by_nicename(category)
         for tag in form.tags.data:
@@ -215,6 +224,7 @@ def tag_postwall(tag_nicename):
     return render_template('postwall.html', posts=posts, tag=tag)
 
 @app.route('/categories/add', methods=['GET', 'POST'])
+@login_required
 def add_categories():
     categories = Category.query.order_by(Category.display_name.asc()).all()
     add_form = AddCategoryForm()
@@ -231,11 +241,32 @@ def add_categories():
                 return redirect(url_for('add_categories'))
     return render_template('add_categories.html', categories=categories, add_form=add_form)
 
+@app.route('/categories/edit', methods=['GET', 'POST'])
+@login_required
+def edit_categories():
+    categories = Category.query.order_by(Category.display_name.asc()).all()
+    edit_form = EditCategoryForm()
+    edit_form.categories.choices = Category.get_category_names()
+    if request.method == "POST":
+        if edit_form.cancel_button.data:
+            return redirect(url_for('show_categories'))
+        if edit_form.validate_on_submit() and edit_form.edit_button.data:
+            selected_category_nicename = edit_form.categories.data
+            category = Category.get_by_nicename(selected_category_nicename)
+            if category:
+                category.display_name = edit_form.cat_edit_box.data
+                category.make_nicename()
+                db.session.add(category)
+                db.session.commit()
+                return redirect(url_for('show_categories'))
+                    
+    return render_template('edit_categories.html', edit_form=edit_form)
+
 @app.route('/categories/merge_delete', methods=['GET', 'POST'])
+@login_required
 def merge_delete_categories():
     categories = Category.query.order_by(Category.display_name.asc()).all()
-    
-    edit_form = EditCategoriesForm(categories=[[category.display_name] for category in categories])
+ 
     merge_delete_form = MergeDeleteCategoryForm()
     merge_delete_form.categories.choices = Category.get_category_names()
     

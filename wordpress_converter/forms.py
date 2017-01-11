@@ -1,7 +1,7 @@
 from flask_wtf import Form
 from wtforms import StringField, TextAreaField, SubmitField, TextField, \
                         PasswordField, BooleanField, SelectMultipleField, \
-                        FormField, FieldList
+                        FormField, FieldList, SelectField
 from wtforms.validators import DataRequired, Required, EqualTo, Email
 
 class PostForm(Form):
@@ -45,14 +45,13 @@ class AddTagForm(Form):
     add_tag = TextField(label="Add a Tag", description="Please enter a name for your tag.", validators=[DataRequired()])
     add_button = SubmitField(label="Add")
     
-class CategoryForm(Form):
-    """ Form portion for a category - can be repeated. """
-    cat_edit_box = TextField()
     
-class EditCategoriesForm(Form):
+class EditCategoryForm(Form):
     """ Form for edit/merge/delete categories. """
-    #categories = FieldList(FormField(CategoryForm))
-    categories = FieldList(TextField())
+    categories = SelectField()
+    cat_edit_box = TextField(validators=[DataRequired()])
+    edit_button = SubmitField(label="Edit")
+    cancel_button = SubmitField(label='Cancel')
 
 class MergeDeleteCategoryForm(Form):
     """ Form to merge/delete categories. """
