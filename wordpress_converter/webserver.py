@@ -5,11 +5,9 @@ import os
 import datetime
 
 # Import flask and template operators
-from flask import Flask, render_template, request, redirect, url_for, \
+from flask import render_template, request, redirect, url_for, \
                     g, session, flash
 
-# Import SQLAlchemy
-from flask_sqlalchemy import SQLAlchemy
 
 # Import Login Manager
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
@@ -211,8 +209,9 @@ def category_postwall(category_nicename):
     category = Category.query.filter(Category.nicename == category_nicename).first()
     posts = category.posts.filter(Post.status=="publish").order_by(Post.date_published.desc()).all()
     return render_template('postwall.html', posts=posts, category=category)
-    
+
 @app.route('/tags', methods=['GET'])
+@app.cache.cached(timeout=300)
 def show_tags():
     tags = Tag.query.order_by(Tag.display_name.asc()).all()
     return render_template('tags.html', tags=tags)
