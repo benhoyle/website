@@ -6,15 +6,8 @@
 
 <div id="postwall" class="row">
     <div id="postwallcontainer" class="col-xs-offset-1 col-lg-offset-2 col-xs-10 col-lg-8">
-        {% if g.user.is_authenticated %}
-        <div id="edit_delete" class="row">
-            <div class="btn-group btn-group-justified btn-group-lg">
-                <a href="{{ url_for('edit_categories') }}" class="btn btn-default" ><span class="glyphicon glyphicon-pencil"></span></a>
-            </div>
-        </div>
-        {% endif %}
         <h2 class="text-center">
-            Categories
+            Edit Categories
         </h2>
         <p class="top-padding">Here are the post categories, arranged in alphabetical order.</p>
         <div id="postcells" class="">
@@ -27,9 +20,20 @@
             {%- endfor %}
         </div>
     </div>
-
 </div>
-
+<div id="add" class="row">
+    <div id="addcontainer" class="col-xs-offset-1 col-lg-offset-2 col-xs-10 col-lg-8">
+        <form method="POST" id="add_form">
+            {{ add_form.csrf_token }}
+            {{ add_form.add_category.label }}
+            {{ add_form.add_category }}
+            {% for error in add_form.add_category.errors %}
+                <span style="color: red;"><b>[{{ error }}]</b></span>
+            {% endfor %}
+            {{ add_form.add_button }}
+        </form>
+    </div>
+</div>
 
 {% endblock %}
 

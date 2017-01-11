@@ -33,3 +33,13 @@ class SignupForm(Form):
     email     = TextField('Email Address', [Email(), Required()])
     password  = PasswordField('New Password', [Required(), EqualTo('confirm', message='Passwords must match')])
     confirm   = PasswordField('Repeat Password')
+    
+class AddCategoryForm(Form):
+    """ Define form for adding a category. """
+    add_category = TextField(label="Add a Category", description="Please enter a name for your category.", validators=[DataRequired()])
+    add_button = SubmitField(label="Add")
+    
+class AddTagForm(Form):
+    """ Define form for adding a category. """
+    add_tag = TextField(label="Add a Tag", description="Please enter a name for your tag.", validators=[DataRequired()])
+    add_button = SubmitField(label="Add")

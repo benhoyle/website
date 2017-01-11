@@ -20,7 +20,8 @@ from wordpress_converter import app, db
 from wordpress_converter.models import Post, Tag, Category, Author
 
 # Import forms
-from wordpress_converter.forms import PostForm, DeleteConfirm, LoginForm
+from wordpress_converter.forms import PostForm, DeleteConfirm, LoginForm, \
+                                        AddCategoryForm
 
 # Sample HTTP error handling
 @app.errorhandler(404)
@@ -212,6 +213,24 @@ def tag_postwall(tag_nicename):
     posts = tag.posts.filter(Post.status=="publish").order_by(Post.date_published.desc()).all()
     return render_template('postwall.html', posts=posts, tag=tag)
 
+@app.route('/categories/edit', methods=['GET', 'POST'])
+def edit_categories():
+    
+    add_form = AddCategoryForm()
+    if request.method == "POST":
+        if add_form.validate_on_submit():
+            print(add_form.add_category.data)
+            category=Category(display_name=add_form.add_category.data)
+            category.make_nicename()
+            if Category.exists(category.nicename):
+                add_form.add_category.errors.append("Category already exists")
+            else:
+                db.session.add(category)
+                db.session.commit()
+                return redirect(url_for('edit_categories'))
+    categories = Category.query.order_by(Category.display_name.asc()).all()
+    return render_template('edit_categories.html', categories=categories, add_form=add_form)
+
 # Configure lines
 import logging
 from logging.handlers import RotatingFileHandler
@@ -227,4 +246,4 @@ if app.debug is not True:
 # Run app for apache deployment    
 if __name__ == "__main__":
     # Do we want to get rid of os import for security?
-    app.run(host=os.environ.get("HOST"))
+    app.run(host=os.environ.get("HOST"), port=int(os.environ.get("PORT")))

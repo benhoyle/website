@@ -92,6 +92,11 @@ class Category(Base):
     def get_category_names(cls):
         """ Return list of tuples (nicename, display_name) for existing tags. """
         return [(c.nicename, c.display_name) for c in cls.query.order_by('display_name').all()]
+        
+    def make_nicename(self):
+        """Generate the nicename from the display title"""
+        no_punct = re.sub(r'[^\w\s]', '', self.display_name.lower().strip())
+        self.nicename = re.sub(r'\s+', '-', no_punct)
     
 class Tag(Base):
     """ Model for blog tags. """
@@ -110,6 +115,11 @@ class Tag(Base):
     def get_tag_names(cls):
         """ Return list of tuples (nicename, display_name) for existing tags. """
         return [(tag.nicename, tag.display_name) for tag in cls.query.order_by('display_name').all()]
+        
+    def make_nicename(self):
+        """Generate the nicename from the display title"""
+        no_punct = re.sub(r'[^\w\s]', '', self.display_name.lower().strip())
+        self.nicename = re.sub(r'\s+', '-', no_punct)
     
 class Author(Base):
     """ Model for blog authors. """
