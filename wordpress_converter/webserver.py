@@ -20,7 +20,8 @@ from wordpress_converter.models import Post, Tag, Category, Author
 # Import forms
 from wordpress_converter.forms import PostForm, DeleteConfirm, LoginForm, \
                                         AddCategoryForm, EditCategoryForm, \
-                                        MergeDeleteCategoryForm
+                                        MergeDeleteCategoryForm, MergeDeleteTagForm, \
+                                        EditTagForm, AddTagForm
 
 # Sample HTTP error handling
 @app.errorhandler(404)
@@ -311,6 +312,96 @@ def merge_delete_categories():
                 merge_delete_form.categories.errors.append("Select more than one category to merge")
                         
     return render_template('md_categories.html', merge_delete_form=merge_delete_form)
+
+@app.route('/tags/add', methods=['GET', 'POST'])
+@login_required
+def add_tags():
+    tags = Tag.query.order_by(Tag.display_name.asc()).all()
+    add_form = AddTagForm()
+    if request.method == "POST":
+        if add_form.validate_on_submit() and add_form.add_button.data:
+            print(add_form.add_tag.data)
+            tag=Tag(display_name=add_form.add_tag.data)
+            tag.make_nicename()
+            if Tag.exists(tag.nicename):
+                add_form.add_tag.errors.append("Tag already exists")
+            else:
+                db.session.add(tag)
+                db.session.commit()
+                return redirect(url_for('add_tags'))
+    return render_template('add_tags.html', tags=tags, add_form=add_form)
+
+@app.route('/tags/edit', methods=['GET', 'POST'])
+@login_required
+def edit_tags():
+    tags = Tag.query.order_by(Tag.display_name.asc()).all()
+    edit_form = EditTagForm()
+    edit_form.tags.choices = Tag.get_tag_names()
+    if request.method == "POST":
+        if edit_form.cancel_button.data:
+            return redirect(url_for('show_tags'))
+        if edit_form.validate_on_submit() and edit_form.edit_button.data:
+            selected_tag_nicename = edit_form.tags.data
+            tag = Tag.get_by_nicename(selected_tag_nicename)
+            if tag:
+                tag.display_name = edit_form.tag_edit_box.data
+                tag.make_nicename()
+                db.session.add(tag)
+                db.session.commit()
+                return redirect(url_for('show_tags'))
+                    
+    return render_template('edit_tags.html', edit_form=edit_form)
+
+@app.route('/tags/merge_delete', methods=['GET', 'POST'])
+@login_required
+def merge_delete_tags():
+    tags = Tag.query.order_by(Tag.display_name.asc()).all()
+ 
+    merge_delete_form = MergeDeleteTagForm()
+    merge_delete_form.tags.choices = Tag.get_tag_names()
+    
+    if request.method == "POST":
+        
+        if merge_delete_form.cancel_button.data:
+            return redirect(url_for('show_tags'))
+        
+        if merge_delete_form.validate_on_submit() and merge_delete_form.delete_button.data:
+            for tag_name in merge_delete_form.tags.data:
+                tag = Tag.get_by_nicename(tag_name)
+                if tag:
+                    flash("Deleted tag: " + tag.display_name)
+                    for post in tag.posts:
+                        post.untag(tag)
+                        db.session.add(post)
+                        flash("Tag removed from post: " + post.display_title)
+                    db.session.delete(tag)
+                    db.session.commit()
+            return redirect(url_for('show_tags'))
+        
+        if merge_delete_form.validate_on_submit() and merge_delete_form.merge_button.data:
+            if len(merge_delete_form.tags.data) > 1:
+                tags_to_merge = [Tag.get_by_nicename(tag_name) for tag_name in merge_delete_form.tags.data]
+                new_tag_name = " ".join([c.display_name for c in tags_to_merge])
+                flash("Merged tag added: "+new_tag_name)
+                new_tag=Tag(display_name=new_tag_name)
+                new_tag.make_nicename()
+                if Tag.exists(new_tag.nicename):
+                    merge_delete_form.tags.errors.append("Select more than one tag to merge")
+                else:
+                    db.session.add(new_tag)
+                    db.session.commit()
+                    for tag in tags_to_merge:
+                        for post in tag.posts:
+                            post.tag(new_tag)
+                            db.session.add(post)
+                            flash("Post tagged with merged tag> " + post.display_title)
+                    db.session.commit()
+                    flash("Delete old tags if no longer needed")
+                    return redirect(url_for('show_tags'))
+            else:
+                merge_delete_form.categories.errors.append("Select more than one tag to merge")
+                        
+    return render_template('md_tags.html', merge_delete_form=merge_delete_form)
 
 # Configure lines
 import logging

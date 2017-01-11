@@ -60,3 +60,19 @@ class MergeDeleteCategoryForm(Form):
     merge_button = SubmitField(label="Merge")
     delete_button = SubmitField(label="Delete")
     cancel_button = SubmitField(label='Cancel')
+
+class EditTagForm(Form):
+    """ Form for edit/merge/delete categories. """
+    tags = SelectField()
+    tag_edit_box = TextField(validators=[DataRequired()])
+    edit_button = SubmitField(label="Edit")
+    cancel_button = SubmitField(label='Cancel')
+
+# Can probably merge tag and category forms
+class MergeDeleteTagForm(Form):
+    """ Form to merge/delete tags. """
+    tags = SelectMultipleField()
+    
+    merge_button = SubmitField(label="Merge")
+    delete_button = SubmitField(label="Delete")
+    cancel_button = SubmitField(label='Cancel')

@@ -6,6 +6,15 @@
 
 <div id="postwall" class="row">
     <div id="postwallcontainer" class="col-xs-offset-1 col-lg-offset-2 col-xs-10 col-lg-8">
+        {% if g.user.is_authenticated %}
+        <div id="edit_delete" class="row">
+            <div class="btn-group btn-group-justified btn-group-lg">
+                <a href="{{ url_for('add_tags') }}" class="btn btn-default" >Add Tag</a>
+                <a href="{{ url_for('edit_tags') }}" class="btn btn-default" >Edit Tag</a>
+                <a href="{{ url_for('merge_delete_tags') }}" class="btn btn-default" >Merge/Delete Tag</a>
+            </div>
+        </div>
+        {% endif %}
         <h2 class="text-center">
             Tags
         </h2>

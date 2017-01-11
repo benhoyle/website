@@ -1,0 +1,35 @@
+{% extends 'navbar.html' %}
+
+{% set active_page = 'tags' %}
+
+{% block content %}
+
+<div id="edit" class="row">
+    <div id="editcontainer" class="col-xs-offset-1 col-lg-offset-2 col-xs-10 col-lg-8">
+        <form method="POST" id="edit_form">
+            {{ edit_form.csrf_token }}
+            <h4 class="text-center">
+                <b>Select Tag to Edit</b>
+            </h4>
+            <div class="form-group">
+            {{ edit_form.tags(class_="form-control", size="15")  }}
+            </div>
+            <div class="form-group">
+                <h4 class="text-center">
+                    <b>Enter new name for selected tag</b>
+                </h4>
+                {{ edit_form.tag_edit_box(class_="form-control")  }}
+            </div>
+            <div class="form-group text-center">
+            {{ edit_form.edit_button(class_="btn btn-default") }}
+            {{ edit_form.cancel_button(class_="btn btn-default") }}
+            </div>
+        </form>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block footer %}
+{% endblock %}

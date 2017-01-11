@@ -115,7 +115,12 @@ class Tag(Base):
     def exists(nicename):
         """ Check if a tag with nicename already exists. """
         return Tag.query.filter(Tag.nicename == nicename).count() > 0
-        
+    
+    @staticmethod
+    def get_by_nicename(nicename):
+        """ Return a category based on the nicename. """
+        return Tag.query.filter(Tag.nicename == nicename).first()
+    
     @classmethod
     def get_tag_names(cls):
         """ Return list of tuples (nicename, display_name) for existing tags. """
