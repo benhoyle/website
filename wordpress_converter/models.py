@@ -73,6 +73,11 @@ class Category(Base):
     def exists(nicename):
         """ Check if a category with nicename already exists. """
         return Category.query.filter(Category.nicename == nicename).count() > 0
+    
+    @staticmethod
+    def get_by_nicename(nicename):
+        """ Return a category based on the nicename. """
+        return Category.query.filter(Category.nicename == nicename).first()
         
     def add_parent(self, parent_nicename):
         """ Adds parent category based on parent_nicename. """

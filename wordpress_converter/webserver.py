@@ -21,7 +21,8 @@ from wordpress_converter.models import Post, Tag, Category, Author
 
 # Import forms
 from wordpress_converter.forms import PostForm, DeleteConfirm, LoginForm, \
-                                        AddCategoryForm
+                                        AddCategoryForm, EditCategoriesForm, \
+                                        MergeDeleteCategoryForm
 
 # Sample HTTP error handling
 @app.errorhandler(404)
@@ -213,12 +214,12 @@ def tag_postwall(tag_nicename):
     posts = tag.posts.filter(Post.status=="publish").order_by(Post.date_published.desc()).all()
     return render_template('postwall.html', posts=posts, tag=tag)
 
-@app.route('/categories/edit', methods=['GET', 'POST'])
-def edit_categories():
-    
+@app.route('/categories/add', methods=['GET', 'POST'])
+def add_categories():
+    categories = Category.query.order_by(Category.display_name.asc()).all()
     add_form = AddCategoryForm()
     if request.method == "POST":
-        if add_form.validate_on_submit():
+        if add_form.validate_on_submit() and add_form.add_button.data:
             print(add_form.add_category.data)
             category=Category(display_name=add_form.add_category.data)
             category.make_nicename()
@@ -227,9 +228,59 @@ def edit_categories():
             else:
                 db.session.add(category)
                 db.session.commit()
-                return redirect(url_for('edit_categories'))
+                return redirect(url_for('add_categories'))
+    return render_template('add_categories.html', categories=categories, add_form=add_form)
+
+@app.route('/categories/merge_delete', methods=['GET', 'POST'])
+def merge_delete_categories():
     categories = Category.query.order_by(Category.display_name.asc()).all()
-    return render_template('edit_categories.html', categories=categories, add_form=add_form)
+    
+    edit_form = EditCategoriesForm(categories=[[category.display_name] for category in categories])
+    merge_delete_form = MergeDeleteCategoryForm()
+    merge_delete_form.categories.choices = Category.get_category_names()
+    
+    if request.method == "POST":
+        
+        if merge_delete_form.cancel_button.data:
+            return redirect(url_for('show_categories'))
+        
+        if merge_delete_form.validate_on_submit() and merge_delete_form.delete_button.data:
+            for category_name in merge_delete_form.categories.data:
+                category = Category.get_by_nicename(category_name)
+                if category:
+                    flash("Deleted category: " + category.display_name)
+                    for post in category.posts:
+                        post.uncategorise(category)
+                        db.session.add(post)
+                        flash("Category removed from post: " + post.display_title)
+                    db.session.delete(category)
+                    db.session.commit()
+            return redirect(url_for('show_categories'))
+        
+        if merge_delete_form.validate_on_submit() and merge_delete_form.merge_button.data:
+            if len(merge_delete_form.categories.data) > 1:
+                cats_to_merge = [Category.get_by_nicename(category_name) for category_name in merge_delete_form.categories.data]
+                new_category_name = " ".join([c.display_name for c in cats_to_merge])
+                flash("Merged category added: "+new_category_name)
+                new_category=Category(display_name=new_category_name)
+                new_category.make_nicename()
+                if Category.exists(new_category.nicename):
+                    merge_delete_form.categories.errors.append("Select more than one category to merge")
+                else:
+                    db.session.add(new_category)
+                    db.session.commit()
+                    for category in cats_to_merge:
+                        for post in category.posts:
+                            post.categorise(new_category)
+                            db.session.add(post)
+                            flash("Post categorised with merged category> " + post.display_title)
+                    db.session.commit()
+                    flash("Delete old categories if no longer needed")
+                    return redirect(url_for('show_categories'))
+            else:
+                merge_delete_form.categories.errors.append("Select more than one category to merge")
+                        
+    return render_template('md_categories.html', merge_delete_form=merge_delete_form)
 
 # Configure lines
 import logging

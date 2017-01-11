@@ -3,20 +3,31 @@
 {% set active_page = 'categories' %}
 
 {% block content %}
-
+<div id="add" class="row">
+    <h2 class="text-center">
+            Categories
+    </h2>
+    <div id="addcontainer" class="text-center col-xs-offset-1 col-lg-offset-2 col-xs-10 col-lg-8">
+        <form method="POST" id="add_form">
+            {{ add_form.csrf_token }}
+            <h4>{{ add_form.add_category.label }}</h4>
+            {{ add_form.add_category }}
+            {% for error in add_form.add_category.errors %}
+                <span style="color: red;"><b>[{{ error }}]</b></span>
+            {% endfor %}
+            {{ add_form.add_button(class_="btn btn-default") }}
+        </form>
+    </div>
+</div>
+<div class="row">
+    <div class="col-xs-offset-1 col-lg-offset-2 col-xs-10 col-lg-8">
+        <hr/>
+    </div>
+</div>
 <div id="postwall" class="row">
     <div id="postwallcontainer" class="col-xs-offset-1 col-lg-offset-2 col-xs-10 col-lg-8">
-        {% if g.user.is_authenticated %}
-        <div id="edit_delete" class="row">
-            <div class="btn-group btn-group-justified btn-group-lg">
-                <a href="{{ url_for('add_categories') }}" class="btn btn-default" >Add Category</a>
-                <a href="{{ url_for('merge_delete_categories') }}" class="btn btn-default" >Merge/Delete Category</a>
-            </div>
-        </div>
-        {% endif %}
-        <h2 class="text-center">
-            Categories
-        </h2>
+        
+        
         <p class="top-padding">Here are the post categories, arranged in alphabetical order.</p>
         <div id="postcells" class="">
             {%- for column in categories|slice(2) %}
