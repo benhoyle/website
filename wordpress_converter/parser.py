@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 import os
 import requests
 import html
+import re
 
 from dateutil import parser
 
@@ -46,6 +47,18 @@ def get_sibling(element):
         return get_sibling(sibling)
     else:
         return sibling
+
+html_escape_table = {
+    "&": "&amp;",
+    '"': "&quot;",
+    "'": "&apos;",
+    ">": "&gt;",
+    "<": "&lt;",
+    }
+
+def html_escape(text):
+    """Produce entities within text."""
+    return "".join(html_escape_table.get(c,c) for c in text)
 
 class WPParser:
     """ Class wrapper for parsing functions."""
@@ -210,10 +223,16 @@ class WPFlaskParser:
                 
     def save_all(self):
         """ Save all to DB. """
+        print("Saving authors")
         self.save_authors()
+        print("Saving tags")
         self.save_tags()
+        print("Saving categories")
         self.save_categories()
+        print("Saving posts")
         self.save_posts()
+        print("Converting Wordpress Markup")
+        self.convert_wp_markup()
         
     def convert_file_links(self, foldername):
         """ Process HTML files in foldername and replace Wordpress URLs with 
@@ -221,10 +240,38 @@ class WPFlaskParser:
         # to do
         pass
         
-    def convert_wp_markup(self, foldername):
+    def convert_wp_markup(self):
         """ Process posts to convert Wordpress markup. """
-        # to do
-        # Found within square brackets - [] (although not all square brackets may be markup
-        # Found so far: slideshare, caption, code
-        pass
+        #WP.com shortcodes are found here: https://en.support.wordpress.com/shortcodes/
+        #- this only does [code] and [caption] at the moment
+        for post in Post.query.all():
+            print("Processing Post: " + str(post.id) + " - " + post.display_title)
+            content = post.content
+            
+            # Process [caption ...] [/caption] WP Markup
+            # caption is found under caption var; first portion of <a> under innerhtml1, closing </a> under innerhtml2
+            caption_regex_string=r'(?P<wp_cap>\[caption .+caption=\"(?P<caption>.+)\"\](?P<innerhtml1>.+)(?P<innerhtml2>\<\/a\>)\[\/caption\])'
+            # Caption may not have the 'caption' variable but the caption may follow
+            matches = re.finditer(caption_regex_string, content)
+            for m in matches:
+                new_html = """<div>{0}<div class="caption"><p>{1}</p></div></a></div>""".format(m.group('innerhtml1'), m.group('caption'))
+                print("Replacing [caption][/caption]")
+                
+                # This replace isn't working properly - it seems to be adding several <a> tags
+                content = content.replace(m.group('wp_cap'), new_html)
+            
+            #Process [code ...] [/code] WP Markup
+
+            # caption is found under caption var; first portion of <a> under innerhtml1, closing </a> under innerhtml2
+            #(\[code.+\](.+)\[\/code\])
+            code_regex_string=r'(?P<wp_code>\[code(\slang(\w+)?=\"\w+\")?\](?P<innerhtml>.+?)\[\/code\])'
+            matches = re.finditer(code_regex_string, content, re.DOTALL)
+            for m in matches:
+                new_html = """<div><pre><code>{}</code></pre></div>""".format(html_escape(m.group('innerhtml')).strip())
+                print("Replacing [code][/code]")
+                content = content.replace(m.group('wp_code'), new_html)
+            
+            post.content = content
+            db.session.add(post)
+            db.session.commit()
                 

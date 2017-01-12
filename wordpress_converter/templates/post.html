@@ -28,9 +28,7 @@
             {% endfor %}
         </div>
         <div id="post" class="row top-padding ">
-            {% for line in post.content.strip().splitlines() %}
-            <p>{{line|safe}}</p>
-            {% endfor %}
+            {{ post.content | contentfilter | safe }}
         </div>
     </div>
 

@@ -8,6 +8,7 @@ import datetime
 from flask import render_template, request, redirect, url_for, \
                     g, session, flash
 
+import jinja2
 
 # Import Login Manager
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
@@ -32,6 +33,30 @@ def not_found(error):
 def internal_error(exception):
     app.logger.error(exception)
     return render_template('500.html'), 500
+
+# Add custom jinja2 filter for rendering posts
+@app.template_filter()
+def contentfilter(content):
+    """ Split into lines and format paragraphs """
+    output_lines = []
+    p_on = True
+    for line in content.strip().splitlines():
+        if len(line) > 0:
+            if line[0] == "<" and line[-1] == ">":
+                if "<pre>" in line:
+                    p_on = False
+                if "</pre>" in line:
+                    p_on = True
+                output_lines.append(line)
+            else:
+                if p_on:
+                    output_lines.append("<p>" + line.strip() + "</p>")
+                else:
+                    output_lines.append(line)
+    return "\n".join(output_lines)
+
+app.jinja_env.filters['contentfilter'] = contentfilter
+
 
 # Start login manager
 lm = LoginManager()
