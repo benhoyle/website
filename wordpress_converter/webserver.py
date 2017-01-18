@@ -41,7 +41,7 @@ def contentfilter(content):
     output_lines = []
     p_on = True
     for line in content.strip().splitlines():
-        if len(line) > 0:
+        if len(line.strip()) > 0:
             if line[0] == "<" and line[-1] == ">":
                 if "<pre>" in line:
                     p_on = False

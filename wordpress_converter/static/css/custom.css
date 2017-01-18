@@ -11,6 +11,10 @@
     margin-right: 3px;
 }
 
+.blockquote {
+    font-size: 10px;
+}
+
 .aligncenter {
     display: block;
     margin-left: auto;

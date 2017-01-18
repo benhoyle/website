@@ -144,6 +144,9 @@ class WPFlaskParser:
             filedata = f.read()
         self.soup = BeautifulSoup(filedata, "xml")
         
+        # Initialise list for url replacement for images etc
+        self.url_replace_list = []
+        
         # Initialise Database
         db.create_all()
     
@@ -220,7 +223,53 @@ class WPFlaskParser:
                         new_db_post.categorise_by_nicename(tag_or_cat['nicename'])
                 
                 db.session.commit()
-                
+    
+    def get_files(self):
+        """ Download images from blog and store in a static "images" folder. """
+        # Images are stored as "items" (as are posts) with accompanying metadata
+        
+        file_dir = os.environ.get('IMAGES_URL','files')
+        
+        # Make directory if it doesn't exist
+        if not os.path.isdir(file_dir):
+            os.mkdir(file_dir)
+        
+        # Find all 'item' tags where <wp:post_type> = attachment
+        attachments = self.soup.find_all(attachment_tag_match)
+        
+        for attachment in attachments: 
+            # url would be of the form https://ipchimp.files.wordpress.com/2011/01/search-portfolio.jpg
+            # Get different parts of url
+            short_filename = os.path.split(attachment.attachment_url.text)[1]
+            url_path = os.path.split(attachment.attachment_url.text)[0]
+            # Store path in global list for later replacement
+            self.url_replace_list.append(attachment.attachment_url.text)
+            # Check if file exists - only download if it doesn't
+            filename = os.path.join(file_dir, short_filename)
+            if not os.path.exists(filename):
+                try:
+                    # Download file
+                    img_data = requests.get(attachment.attachment_url.text).content
+                    # Save file
+                    with open(filename, 'wb') as handler:
+                        handler.write(img_data)
+                except:
+                    raise
+        
+        # Replace urls in posts
+        for post in Post.query.all():
+            content = post.content
+            for url in self.url_replace_list:
+                if url in content:
+                    short_filename = os.path.split(url)[1]
+                    relative_path = os.environ.get('RELATIVE_IMAGES_URL')
+                    new_url = os.path.join(relative_path, short_filename)
+                    content = content.replace(url, new_url)
+            post.content = content
+            print("Replacing file urls for post:" + str(post.id) + " - " + post.display_title)
+            db.session.add(post)
+            db.session.commit()
+    
     def save_all(self):
         """ Save all to DB. """
         print("Saving authors")
@@ -234,18 +283,12 @@ class WPFlaskParser:
         print("Converting Wordpress Markup")
         self.convert_wp_markup()
         
-    def convert_file_links(self, foldername):
-        """ Process HTML files in foldername and replace Wordpress URLs with 
-        local urls to 'files' directory. """
-        # to do
-        pass
         
     def convert_wp_markup(self):
         """ Process posts to convert Wordpress markup. """
         #WP.com shortcodes are found here: https://en.support.wordpress.com/shortcodes/
         #- this only does [code] and [caption] at the moment
         for post in Post.query.all():
-            print("Processing Post: " + str(post.id) + " - " + post.display_title)
             content = post.content
             
             # Process [caption ...] [/caption] WP Markup
@@ -255,20 +298,26 @@ class WPFlaskParser:
             matches = re.finditer(caption_regex_string, content)
             for m in matches:
                 new_html = """<div>{0}<div class="caption"><p>{1}</p></div></a></div>""".format(m.group('innerhtml1'), m.group('caption'))
-                print("Replacing [caption][/caption]")
+                print("Replacing [caption][/caption] for post:" + str(post.id) + " - " + post.display_title)
                 
-                # This replace isn't working properly - it seems to be adding several <a> tags
+                content = content.replace(m.group('wp_cap'), new_html)
+            
+            # Alternate caption where caption text follows </a> rather than in 'caption' attribute
+            alt_caption_regex_string=r'(?P<wp_cap>\[caption .+\](?P<innerhtml1>.+)(?P<innerhtml2>\<\/a\>)(?P<caption>.+)\[\/caption\])'
+            matches = re.finditer(alt_caption_regex_string, content)
+            for m in matches:
+                new_html = """<div>{0}<div class="caption"><p>{1}</p></div></a></div>""".format(m.group('innerhtml1'), m.group('caption'))
+                print("Replacing [caption][/caption] for post:" + str(post.id) + " - " + post.display_title)
+                
                 content = content.replace(m.group('wp_cap'), new_html)
             
             #Process [code ...] [/code] WP Markup
 
-            # caption is found under caption var; first portion of <a> under innerhtml1, closing </a> under innerhtml2
-            #(\[code.+\](.+)\[\/code\])
             code_regex_string=r'(?P<wp_code>\[code(\slang(\w+)?=\"\w+\")?\](?P<innerhtml>.+?)\[\/code\])'
             matches = re.finditer(code_regex_string, content, re.DOTALL)
             for m in matches:
                 new_html = """<div><pre><code>{}</code></pre></div>""".format(html_escape(m.group('innerhtml')).strip())
-                print("Replacing [code][/code]")
+                print("Replacing [code][/code] for post:" + str(post.id) + " - " + post.display_title)
                 content = content.replace(m.group('wp_code'), new_html)
             
             post.content = content
