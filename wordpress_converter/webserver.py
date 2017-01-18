@@ -6,7 +6,7 @@ import datetime
 
 # Import flask and template operators
 from flask import render_template, request, redirect, url_for, \
-                    g, session, flash
+                    g, session, flash, make_response
 
 import jinja2
 
@@ -104,8 +104,11 @@ def logout():
     logout_user()
     return redirect(url_for('show_posts'))
 
-@app.route('/posts', methods=['GET'])
 @app.route('/', methods=['GET'])
+def index():
+    return redirect(url_for('show_posts'))
+
+@app.route('/posts', methods=['GET'])
 def show_posts():
     posts = Post.query.filter(Post.status=="publish").order_by(Post.date_published.desc()).all()
     return render_template('postwall.html', posts=posts)
@@ -427,6 +430,36 @@ def merge_delete_tags():
                 merge_delete_form.categories.errors.append("Select more than one tag to merge")
                         
     return render_template('md_tags.html', merge_delete_form=merge_delete_form)
+
+@app.route('/sitemap.xml', methods=['GET'])
+def sitemap():
+    
+    #pages=[]
+    ten_days_ago = datetime.datetime.now() - datetime.timedelta(days=10)
+    ## static pages - code below exposes routes requiring logins I'd rather hide
+    #for rule in app.url_map.iter_rules():
+        
+        #if "GET" in rule.methods and len(rule.arguments)==0:
+            #pages.append(
+                        #[rule.rule,ten_days_ago]
+                        #)
+    # Manually append main routes
+    pages = [
+        [url_for('show_posts'), ten_days_ago],
+        [url_for('show_categories'), ten_days_ago],
+        [url_for('show_tags'), ten_days_ago]
+        ]
+    
+    # Blog posts
+    posts = Post.query.filter(Post.status=="publish").order_by(Post.date_updated.desc()).all()
+    for post in posts:
+        url=url_for('post',nicename=post.nicename)
+        modified_time=post.date_updated.isoformat()
+        pages.append([url,modified_time]) 
+    sitemap_xml = render_template('sitemap.xml', pages=pages)
+    response= make_response(sitemap_xml)
+    response.headers["Content-Type"] = "application/xml" 
+    return response
 
 # Configure lines
 import logging
