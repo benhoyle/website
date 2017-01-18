@@ -33,7 +33,7 @@
             {%- for column in categories|slice(2) %}
             <ul class="col-sm-6">
             {%- for category in column %}
-                <li><a href={{url_for('category_postwall', category_nicename=category.nicename)}}>{{ category.display_name }}</a></li>
+                <li><a href={{url_for('category_postwall', subsite=category.subsite, category_nicename=category.nicename)}}>{{ category.display_name }}</a></li>
             {%- endfor %}
             </ul>
             {%- endfor %}

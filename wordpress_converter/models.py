@@ -57,6 +57,8 @@ post_author = db.Table('post_author',
     db.Column('author_id', db.Integer, db.ForeignKey('author.id'))
     )
 
+# Add class Subsite
+
 class Category(Base):
     """ Model for blog categories. """
     __tablename__ = "category"
@@ -68,6 +70,9 @@ class Category(Base):
     # parent is id of another category - use custom method to return children
     # parent is referred to by nicename
     parent = db.Column(db.Integer, db.ForeignKey('category.id'))
+    
+    #subsite e.g. if importing multiple different blogs
+    subsite = db.Column(db.String(25))
     
     @staticmethod
     def exists(nicename):
@@ -94,9 +99,9 @@ class Category(Base):
             #return db.session.query(post_category).join(Post, (Post.id == post_category.c.post_id)).filter(post_category.c.category_id == category_id).all()
     
     @classmethod
-    def get_category_names(cls):
+    def get_category_names(cls, subsite):
         """ Return list of tuples (nicename, display_name) for existing tags. """
-        return [(c.nicename, c.display_name) for c in cls.query.order_by('display_name').all()]
+        return [(c.nicename, c.display_name) for c in cls.query.filter(cls.subsite==subsite).order_by('display_name').all()]
         
     def make_nicename(self):
         """Generate the nicename from the display title"""
@@ -111,6 +116,9 @@ class Tag(Base):
     # Tag name with spaces and capitals
     display_name = db.Column(db.String(256))
     
+    #subsite e.g. if importing multiple different blogs
+    subsite = db.Column(db.String(25))
+    
     @staticmethod
     def exists(nicename):
         """ Check if a tag with nicename already exists. """
@@ -122,9 +130,9 @@ class Tag(Base):
         return Tag.query.filter(Tag.nicename == nicename).first()
     
     @classmethod
-    def get_tag_names(cls):
+    def get_tag_names(cls, subsite):
         """ Return list of tuples (nicename, display_name) for existing tags. """
-        return [(tag.nicename, tag.display_name) for tag in cls.query.order_by('display_name').all()]
+        return [(tag.nicename, tag.display_name) for tag in cls.query.filter(cls.subsite==subsite).order_by('display_name').all()]
         
     def make_nicename(self):
         """Generate the nicename from the display title"""
@@ -140,6 +148,9 @@ class Author(Base):
     first_name = db.Column(db.String(128))
     last_name = db.Column(db.String(128))
     password = db.Column(db.String(256))
+    
+    #subsite e.g. if importing multiple different blogs
+    subsite = db.Column(db.String(25))
     
     @staticmethod
     def exists(login):
@@ -206,7 +217,7 @@ class Post(Base):
                         backref=db.backref('posts', lazy='dynamic'),
                         lazy='dynamic')
     
-    #subsite e.g. ipchimp, ra, t
+    #subsite e.g. if importing multiple different blogs
     subsite = db.Column(db.String(25))
     
     def make_nicename(self):

@@ -136,13 +136,15 @@ class WPParser:
 class WPFlaskParser:
     """ Class wrapper for parsing functions to create DB for Flask."""
     
-    def __init__(self, path_to_file):
+    def __init__(self, path_to_file, subsite=None):
         """ Initialise parser with the filename of a Wordpress export XML file. 
             Output file is set by environment variable DATABASE_URL.
             (As environment variable is used by Flask. """
         with open(path_to_file, 'r') as f:
             filedata = f.read()
         self.soup = BeautifulSoup(filedata, "xml")
+        
+        self.subsite = subsite
         
         # Initialise list for url replacement for images etc
         self.url_replace_list = []
@@ -160,7 +162,8 @@ class WPFlaskParser:
                     email = xml_author.author_email.text,
                     display_name = html.unescape(xml_author.author_display_name.text),
                     first_name = html.unescape(xml_author.author_first_name.text),
-                    last_name = html.unescape(xml_author.author_last_name.text)
+                    last_name = html.unescape(xml_author.author_last_name.text),
+                    subsite = self.subsite
                     )
                 db.session.add(new_db_author)
                 db.session.commit()
@@ -172,7 +175,8 @@ class WPFlaskParser:
             if not Tag.exists(xml_tag.tag_slug.text):
                 new_db_tag = Tag(
                     nicename=xml_tag.tag_slug.text, 
-                    display_name=html.unescape(xml_tag.tag_name.text)
+                    display_name=html.unescape(xml_tag.tag_name.text),
+                    subsite = self.subsite
                     )
                 db.session.add(new_db_tag)
                 db.session.commit()
@@ -184,7 +188,8 @@ class WPFlaskParser:
             if not Category.exists(xml_category.category_nicename.text):
                 new_db_category = Category(
                     nicename=xml_category.category_nicename.text, 
-                    display_name=html.unescape(xml_category.cat_name.text)
+                    display_name=html.unescape(xml_category.cat_name.text),
+                    subsite = self.subsite
                     )
                 if xml_category.category_parent.text:
                     new_db_category = new_db_category.add_parent(xml_category.category_parent.text) 
@@ -207,7 +212,8 @@ class WPFlaskParser:
                     date_published_year = post_date.year,
                     date_published_month = post_date.month,
                     date_updated = parser.parse(post.post_date.text),
-                    status = post.status.text
+                    status = post.status.text,
+                    subsite = self.subsite
                 )
                 db.session.add(new_db_post)
                 db.session.commit()
@@ -292,7 +298,8 @@ class WPFlaskParser:
         """ Process posts to convert Wordpress markup. """
         #WP.com shortcodes are found here: https://en.support.wordpress.com/shortcodes/
         #- this only does [code] and [caption] at the moment
-        for post in Post.query.all():
+        posts = Post.query.filter(Post.subsite==self.subsite).all()
+        for post in posts:
             content = post.content
             
             # Process [caption ...] [/caption] WP Markup

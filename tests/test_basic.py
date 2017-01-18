@@ -113,6 +113,18 @@ class TestCase(unittest.TestCase):
         assert posts[0].categories[0].nicename == "testcat1"
         assert posts[0].authors[0].last_name == "Author"
 
+
+    def test_all_parse(self):
+        """ Test all parsing functions. """
+        self.flaskparser.save_all()
+        posts = Post.query.all()
+        
+        assert len(posts) > 0
+        assert len(posts[0].content) > 0
+        assert posts[0].tags.count() == 2
+        assert posts[0].categories[0].nicename == "testcat1"
+        assert posts[0].authors[0].last_name == "Author"
+
 if __name__ == '__main__':
     try:
         unittest.main()

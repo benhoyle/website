@@ -31,7 +31,7 @@
         <p class="top-padding">Here are the post tags, arranged in alphabetical order.</p>
         <div id="tags" class="text-justify">
             {% for tag in tags %}
-                <span><a href={{url_for('tag_postwall', tag_nicename=tag.nicename)}}>&#35;{{ tag.display_name }}</a></span>
+                <span><a href={{url_for('tag_postwall', subsite=tag.subsite, tag_nicename=tag.nicename)}}>&#35;{{ tag.display_name }}</a></span>
             {% endfor %}
         </div>
     </div>
