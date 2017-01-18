@@ -4,6 +4,10 @@ import getpass
 
 from wordpress_converter import db
 
+print("Available authors:")
+for author in Author.query.all():
+    print(author.login)
+
 login = input("Enter author login: ")
 user = Author.query.filter(Author.login==login).first()
 if not user:

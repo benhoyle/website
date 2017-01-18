@@ -282,6 +282,8 @@ class WPFlaskParser:
         self.save_posts()
         print("Converting Wordpress Markup")
         self.convert_wp_markup()
+        print("Saving static files and replacing Wordpress URLS")
+        self.get_files()
         
         
     def convert_wp_markup(self):
