@@ -245,16 +245,17 @@ class WPFlaskParser:
             # Store path in global list for later replacement
             self.url_replace_list.append(attachment.attachment_url.text)
             # Check if file exists - only download if it doesn't
-            filename = os.path.join(file_dir, short_filename)
-            if not os.path.exists(filename):
-                try:
-                    # Download file
-                    img_data = requests.get(attachment.attachment_url.text).content
-                    # Save file
-                    with open(filename, 'wb') as handler:
-                        handler.write(img_data)
-                except:
-                    raise
+            if short_filename:
+                filename = os.path.join(file_dir, short_filename)
+                if not os.path.exists(filename):
+                    try:
+                        # Download file
+                        img_data = requests.get(attachment.attachment_url.text).content
+                        # Save file
+                        with open(filename, 'wb') as handler:
+                            handler.write(img_data)
+                    except:
+                        raise
         
         # Replace urls in posts
         for post in Post.query.all():
@@ -263,8 +264,9 @@ class WPFlaskParser:
                 if url in content:
                     short_filename = os.path.split(url)[1]
                     relative_path = os.environ.get('RELATIVE_IMAGES_URL')
-                    new_url = os.path.join(relative_path, short_filename)
-                    content = content.replace(url, new_url)
+                    if short_filename:
+                        new_url = os.path.join(relative_path, short_filename)
+                        content = content.replace(url, new_url)
             post.content = content
             print("Replacing file urls for post:" + str(post.id) + " - " + post.display_title)
             db.session.add(post)
