@@ -59,6 +59,6 @@ to enter a password.
 Use this for viewing / testing not for production!
 
 At the command line:
-```python -m wordpress_convertor.webserver```
+```python -m wordpress_converter.webserver```
 
 Navigate your browser to http://localhost/ or http://[your_ip]:[your_port].
