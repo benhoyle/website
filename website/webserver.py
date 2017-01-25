@@ -103,7 +103,7 @@ def login():
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for('show_posts'))
+    return redirect(url_for('index'))
 
 @app.route('/', methods=['GET'])
 def index():
@@ -111,12 +111,12 @@ def index():
 
 @app.route('/<subsite>/posts', methods=['GET'])
 def show_posts(subsite):
-    
+
     if subsite not in SUBSITES:
         return redirect(url_for('show_posts', subsite=SUBSITES[0]))
     g.subsite = subsite
     posts = Post.query.filter(Post.subsite==subsite).filter(Post.status=="publish").order_by(Post.date_published.desc()).all()
-    
+
     return render_template('postwall.html', posts=posts)
 
 @app.route('/<subsite>/posts/drafts', methods=['GET'])
@@ -335,10 +335,10 @@ def merge_delete_categories(subsite):
         return redirect(url_for('show_categories', subsite=SUBSITES[0]))
     g.subsite = subsite
     categories = Category.query.filter(Category.subsite==subsite).order_by(Category.display_name.asc()).all()
- 
+
     merge_delete_form = MergeDeleteCategoryForm()
     merge_delete_form.categories.choices = Category.get_category_names(subsite)
-    
+
     if request.method == "POST":
 
         if merge_delete_form.cancel_button.data:
@@ -356,7 +356,7 @@ def merge_delete_categories(subsite):
                     db.session.delete(category)
                     db.session.commit()
             return redirect(url_for('show_categories', subsite=subsite))
-        
+
         if merge_delete_form.validate_on_submit() and merge_delete_form.merge_button.data:
             if len(merge_delete_form.categories.data) > 1:
                 cats_to_merge = [Category.get_by_nicename(category_name) for category_name in merge_delete_form.categories.data]
@@ -436,10 +436,10 @@ def merge_delete_tags(subsite):
         return redirect(url_for('show_tags', subsite=SUBSITES[0]))
     g.subsite = subsite
     tags = Tag.query.filter(Tag.subsite==subsite).order_by(Tag.display_name.asc()).all()
- 
+
     merge_delete_form = MergeDeleteTagForm()
     merge_delete_form.tags.choices = Tag.get_tag_names(subsite)
- 
+
     if request.method == "POST":
 
         if merge_delete_form.cancel_button.data:
@@ -502,13 +502,13 @@ def sitemap():
         pages.append([url_for('show_posts', subsite=subsite), ten_days_ago])
         pages.append([url_for('show_categories', subsite=subsite), ten_days_ago])
         pages.append([url_for('show_tags', subsite=subsite), ten_days_ago])
-    
+
         # Blog posts
         posts = Post.query.filter(Post.subsite==subsite).filter(Post.status=="publish").order_by(Post.date_updated.desc()).all()
         for post in posts:
             url=url_for('post', subsite=subsite, nicename=post.nicename)
             modified_time=post.date_updated.isoformat()
-            pages.append([url,modified_time]) 
+            pages.append([url,modified_time])
 
     sitemap_xml = render_template('sitemap.xml', pages=pages)
     response= make_response(sitemap_xml)
