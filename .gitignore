@@ -6,6 +6,9 @@ __pycache__/
 # Web files
 */static/images
 
+# Databases
+*.db
+
 # C extensions
 *.so
 

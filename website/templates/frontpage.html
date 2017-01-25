@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Ben Hoyle{% endblock %}
+
+{% block content %}
+
+<div style="background:transparent !important" class="jumbotron vertical-center">
+    <div class="container">
+        <div id="title" class="row extra-spacing">
+            <h1 class="text-center"><span class="text-danger">sys_err: { </span><span class="text-muted">ben hoyle</span><span class="text-danger"> }</span></h1>
+        </div>
+
+        <div class="row text-center">
+            <div class="col-sm-4">
+                <a href="{{ url_for('show_posts', subsite='ipchimp') }}"><h2>Patent Attorney</h2></a>
+            </div>
+            <div class="col-sm-4">
+                <a href="{{ url_for('show_posts', subsite='roboticape') }}"><h2>Digital Engineer</h2></a>
+            </div>
+            <div class="col-sm-4">
+                <a href="{{ url_for('show_posts', subsite='pontificatingpongid') }}"><h2>Parent of Three</h2></a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

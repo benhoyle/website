@@ -1,8 +1,8 @@
-from wordpress_converter.models import Author
+from website.models import Author
 
 import getpass
 
-from wordpress_converter import db
+from website import db
 
 print("Available authors:")
 for author in Author.query.all():

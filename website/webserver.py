@@ -13,13 +13,13 @@ import jinja2
 # Import Login Manager
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
 
-from wordpress_converter import app, db
+from website import app, db
 
 # Import models
-from wordpress_converter.models import Post, Tag, Category, Author
+from website.models import Post, Tag, Category, Author
 
 # Import forms
-from wordpress_converter.forms import PostForm, DeleteConfirm, LoginForm, \
+from website.forms import PostForm, DeleteConfirm, LoginForm, \
                                         AddCategoryForm, EditCategoryForm, \
                                         MergeDeleteCategoryForm, MergeDeleteTagForm, \
                                         EditTagForm, AddTagForm
@@ -28,7 +28,7 @@ from wordpress_converter.forms import PostForm, DeleteConfirm, LoginForm, \
 @app.errorhandler(404)
 def not_found(error):
     return render_template('404.html'), 404
-    
+
 @app.errorhandler(500)
 def internal_error(exception):
     app.logger.error(exception)
@@ -67,11 +67,11 @@ lm.login_view = 'login'
 @lm.user_loader
 def load_user(id):
     return Author.query.get(int(id))
-    
+
 @app.before_request
 def before_request():
     g.user = current_user
-    
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     # If user is already logged in go straight to homepage
@@ -83,7 +83,7 @@ def login():
     # Verify the sign in form
     if form.validate_on_submit():
         session['remember_me'] = form.remember_me.data
-        
+
         user = Author.query.filter(Author.login==form.login.data).first()
         if user and user.check_password(form.password.data):
             session['user_id'] = user.id
@@ -97,7 +97,7 @@ def login():
         flash('Wrong email or password', 'error-message')
 
     return render_template("login.html", form=form)
-    
+
 @app.route("/logout")
 @login_required
 def logout():
@@ -106,7 +106,7 @@ def logout():
 
 @app.route('/', methods=['GET'])
 def index():
-    return redirect(url_for('show_posts'))
+    return render_template('frontpage.html')
 
 @app.route('/posts', methods=['GET'])
 def show_posts():
@@ -129,7 +129,7 @@ def post(nicename):
     if not post:
         return redirect(url_for('show_posts'))
     return render_template('post.html', post=post)
-    
+
 @app.route('/posts/<nicename>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_post(nicename):
@@ -169,12 +169,12 @@ def edit_post(nicename):
                 post.untag(tag)
         for tag in form.tags.data:
             post.tag_by_nicename(tag)
-        
+
         db.session.add(post)
         db.session.commit()
         return redirect(url_for('post', nicename=post.nicename))
     return render_template('add_edit.html', form=form)
-    
+
 @app.route('/posts/add', methods=['GET', 'POST'])
 @login_required
 def add_post():
@@ -184,9 +184,9 @@ def add_post():
     if form.validate_on_submit():
         if form.cancel.data:
             return redirect(url_for('post', nicename=post.nicename))
-        
+
         post = Post()
-        post.display_title = form.display_title.data 
+        post.display_title = form.display_title.data
         post.content = form.content.data
         post.date_updated = datetime.datetime.now()
         post.make_nicename()
@@ -198,16 +198,16 @@ def add_post():
             date_published_year = post.date_published.year
             date_published_month = post.date_published.month
         post.excerpt = ""
-        
+
         db.session.add(post)
-        
+
         for category in form.categories.data:
             post.categorise_by_nicename(category)
         for tag in form.tags.data:
             post.tag_by_nicename(tag)
         post.add_author_by_login(g.user.login)
-        
-        
+
+
         db.session.commit()
         return redirect(url_for('post', nicename=post.nicename))
     return render_template('add_edit.html', form=form)
@@ -287,22 +287,22 @@ def edit_categories():
                 db.session.add(category)
                 db.session.commit()
                 return redirect(url_for('show_categories'))
-                    
+
     return render_template('edit_categories.html', edit_form=edit_form)
 
 @app.route('/categories/merge_delete', methods=['GET', 'POST'])
 @login_required
 def merge_delete_categories():
     categories = Category.query.order_by(Category.display_name.asc()).all()
- 
+
     merge_delete_form = MergeDeleteCategoryForm()
     merge_delete_form.categories.choices = Category.get_category_names()
-    
+
     if request.method == "POST":
-        
+
         if merge_delete_form.cancel_button.data:
             return redirect(url_for('show_categories'))
-        
+
         if merge_delete_form.validate_on_submit() and merge_delete_form.delete_button.data:
             for category_name in merge_delete_form.categories.data:
                 category = Category.get_by_nicename(category_name)
@@ -315,7 +315,7 @@ def merge_delete_categories():
                     db.session.delete(category)
                     db.session.commit()
             return redirect(url_for('show_categories'))
-        
+
         if merge_delete_form.validate_on_submit() and merge_delete_form.merge_button.data:
             if len(merge_delete_form.categories.data) > 1:
                 cats_to_merge = [Category.get_by_nicename(category_name) for category_name in merge_delete_form.categories.data]
@@ -338,7 +338,7 @@ def merge_delete_categories():
                     return redirect(url_for('show_categories'))
             else:
                 merge_delete_form.categories.errors.append("Select more than one category to merge")
-                        
+
     return render_template('md_categories.html', merge_delete_form=merge_delete_form)
 
 @app.route('/tags/add', methods=['GET', 'POST'])
@@ -377,22 +377,22 @@ def edit_tags():
                 db.session.add(tag)
                 db.session.commit()
                 return redirect(url_for('show_tags'))
-                    
+
     return render_template('edit_tags.html', edit_form=edit_form)
 
 @app.route('/tags/merge_delete', methods=['GET', 'POST'])
 @login_required
 def merge_delete_tags():
     tags = Tag.query.order_by(Tag.display_name.asc()).all()
- 
+
     merge_delete_form = MergeDeleteTagForm()
     merge_delete_form.tags.choices = Tag.get_tag_names()
-    
+
     if request.method == "POST":
-        
+
         if merge_delete_form.cancel_button.data:
             return redirect(url_for('show_tags'))
-        
+
         if merge_delete_form.validate_on_submit() and merge_delete_form.delete_button.data:
             for tag_name in merge_delete_form.tags.data:
                 tag = Tag.get_by_nicename(tag_name)
@@ -405,7 +405,7 @@ def merge_delete_tags():
                     db.session.delete(tag)
                     db.session.commit()
             return redirect(url_for('show_tags'))
-        
+
         if merge_delete_form.validate_on_submit() and merge_delete_form.merge_button.data:
             if len(merge_delete_form.tags.data) > 1:
                 tags_to_merge = [Tag.get_by_nicename(tag_name) for tag_name in merge_delete_form.tags.data]
@@ -428,17 +428,17 @@ def merge_delete_tags():
                     return redirect(url_for('show_tags'))
             else:
                 merge_delete_form.categories.errors.append("Select more than one tag to merge")
-                        
+
     return render_template('md_tags.html', merge_delete_form=merge_delete_form)
 
 @app.route('/sitemap.xml', methods=['GET'])
 def sitemap():
-    
+
     #pages=[]
     ten_days_ago = datetime.datetime.now() - datetime.timedelta(days=10)
     ## static pages - code below exposes routes requiring logins I'd rather hide
     #for rule in app.url_map.iter_rules():
-        
+
         #if "GET" in rule.methods and len(rule.arguments)==0:
             #pages.append(
                         #[rule.rule,ten_days_ago]
@@ -449,16 +449,16 @@ def sitemap():
         [url_for('show_categories'), ten_days_ago],
         [url_for('show_tags'), ten_days_ago]
         ]
-    
+
     # Blog posts
     posts = Post.query.filter(Post.status=="publish").order_by(Post.date_updated.desc()).all()
     for post in posts:
         url=url_for('post',nicename=post.nicename)
         modified_time=post.date_updated.isoformat()
-        pages.append([url,modified_time]) 
+        pages.append([url,modified_time])
     sitemap_xml = render_template('sitemap.xml', pages=pages)
     response= make_response(sitemap_xml)
-    response.headers["Content-Type"] = "application/xml" 
+    response.headers["Content-Type"] = "application/xml"
     return response
 
 # Configure lines
@@ -473,7 +473,7 @@ if app.debug is not True:
     file_handler.setFormatter(formatter)
     app.logger.addHandler(file_handler)
 
-# Run app for apache deployment    
+# Run app for apache deployment
 if __name__ == "__main__":
     # Do we want to get rid of os import for security?
     app.run(host=os.environ.get("HOST"), port=int(os.environ.get("PORT")))

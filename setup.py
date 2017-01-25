@@ -10,13 +10,13 @@ with open('LICENSE') as f:
     license = f.read()
 
 setup(
-    name='wordpress_converter',
+    name='website',
     version='0.0.1',
-    description='A tool to convert a Wordpress.com export file into a Flask app.',
+    description='My website.',
     long_description=readme,
     author='Ben Hoyle',
     author_email='benjhoyle@gmail.com',
-    url='https://github.com/benhoyle/wordpress_converter',
+    url='https://github.com/benhoyle/website',
     license=license,
     packages=find_packages(exclude=('tests', 'docs'))
     #packages=['patentdata']
