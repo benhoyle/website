@@ -150,8 +150,8 @@ def edit_post(subsite, nicename):
     if not post:
         return redirect(url_for('show_posts'), subsite=subsite)
     form = PostForm(request.form, post)
-    form.categories.choices = Category.get_category_names()
-    form.tags.choices = Tag.get_tag_names()
+    form.categories.choices = Category.get_category_names(subsite)
+    form.tags.choices = Tag.get_tag_names(subsite)
     if request.method == "GET":
         # Preselect tags and categories
         form.categories.process_data(post.get_category_nicenames())
@@ -354,7 +354,7 @@ def merge_delete_categories(subsite):
                         flash("Category removed from post: " + post.display_title)
                     db.session.delete(category)
                     db.session.commit()
-            return redirect(url_for('show_categories'))
+            return redirect(url_for('show_categories', subsite=subsite))
         
         if merge_delete_form.validate_on_submit() and merge_delete_form.merge_button.data:
             if len(merge_delete_form.categories.data) > 1:
