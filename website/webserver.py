@@ -57,6 +57,7 @@ def contentfilter(content):
 
 app.jinja_env.filters['contentfilter'] = contentfilter
 
+SUBSITES = [result[0] for result in db.session.query(Post.subsite).distinct().all()]
 
 # Start login manager
 lm = LoginManager()
@@ -93,7 +94,7 @@ def login():
                 session.pop('remember_me', None)
             login_user(user, remember = remember_me)
             flash('Welcome %s' % user.display_name)
-            return redirect(url_for('show_posts'))
+            return redirect(url_for('show_posts', subsite=SUBSITES[0]))
         flash('Wrong email or password', 'error-message')
 
     return render_template("login.html", form=form)
@@ -108,37 +109,49 @@ def logout():
 def index():
     return render_template('frontpage.html')
 
-@app.route('/posts', methods=['GET'])
-def show_posts():
-    posts = Post.query.filter(Post.status=="publish").order_by(Post.date_published.desc()).all()
+@app.route('/<subsite>/posts', methods=['GET'])
+def show_posts(subsite):
+    
+    if subsite not in SUBSITES:
+        return redirect(url_for('show_posts', subsite=SUBSITES[0]))
+    g.subsite = subsite
+    posts = Post.query.filter(Post.subsite==subsite).filter(Post.status=="publish").order_by(Post.date_published.desc()).all()
+    
     return render_template('postwall.html', posts=posts)
 
-@app.route('/posts/drafts', methods=['GET'])
-def show_drafts():
-    posts = Post.query.filter(Post.status=="draft").order_by(Post.date_updated.desc()).all()
+@app.route('/<subsite>/posts/drafts', methods=['GET'])
+def show_drafts(subsite):
+    if subsite not in SUBSITES:
+        return redirect(url_for('show_drafts', subsite=SUBSITES[0]))
+    g.subsite = subsite
+    posts = Post.query.filter(Post.subsite==subsite).filter(Post.status=="draft").order_by(Post.date_updated.desc()).all()
     return render_template('postwall.html', posts=posts)
 
-@app.route('/posts/<nicename>', methods=['GET'])
-def post(nicename):
+@app.route('/<subsite>/posts/<nicename>', methods=['GET'])
+def post(subsite, nicename):
+    if subsite not in SUBSITES:
+        return redirect(url_for('show_posts', subsite=SUBSITES[0]))
+    g.subsite = subsite
     if g.user is not None and g.user.is_authenticated:
         # Show drafts as well as published posts
-        post = Post.query.filter(Post.nicename == nicename).first()
+        post = Post.query.filter(Post.subsite==subsite).filter(Post.nicename == nicename).first()
     else:
         # Only show published posts
-        post = Post.query.filter(Post.status=="publish").filter(Post.nicename == nicename).first()
+        post = Post.query.filter(Post.subsite==subsite).filter(Post.status=="publish").filter(Post.nicename == nicename).first()
     if not post:
-        return redirect(url_for('show_posts'))
+        return redirect(url_for('show_posts'), subsite=subsite)
     return render_template('post.html', post=post)
 
-@app.route('/posts/<nicename>/edit', methods=['GET', 'POST'])
+@app.route('/<subsite>/posts/<nicename>/edit', methods=['GET', 'POST'])
 @login_required
-def edit_post(nicename):
-    post = Post.query.filter(Post.nicename == nicename).first()
+def edit_post(subsite, nicename):
+    g.subsite = subsite
+    post = Post.query.filter(Post.subsite==subsite).filter(Post.nicename == nicename).first()
     if not post:
-        return redirect(url_for('show_posts'))
+        return redirect(url_for('show_posts'), subsite=subsite)
     form = PostForm(request.form, post)
-    form.categories.choices = Category.get_category_names()
-    form.tags.choices = Tag.get_tag_names()
+    form.categories.choices = Category.get_category_names(subsite)
+    form.tags.choices = Tag.get_tag_names(subsite)
     if request.method == "GET":
         # Preselect tags and categories
         form.categories.process_data(post.get_category_nicenames())
@@ -172,15 +185,18 @@ def edit_post(nicename):
 
         db.session.add(post)
         db.session.commit()
-        return redirect(url_for('post', nicename=post.nicename))
+        return redirect(url_for('post', subsite=subsite, nicename=post.nicename))
     return render_template('add_edit.html', form=form)
 
-@app.route('/posts/add', methods=['GET', 'POST'])
+@app.route('/<subsite>/posts/add', methods=['GET', 'POST'])
 @login_required
-def add_post():
+def add_post(subsite):
+    if subsite not in SUBSITES:
+        return redirect(url_for('show_posts', subsite=SUBSITES[0]))
+    g.subsite = subsite
     form = PostForm()
-    form.categories.choices = Category.get_category_names()
-    form.tags.choices = Tag.get_tag_names()
+    form.categories.choices = Category.get_category_names(subsite)
+    form.tags.choices = Tag.get_tag_names(subsite)
     if form.validate_on_submit():
         if form.cancel.data:
             return redirect(url_for('post', nicename=post.nicename))
@@ -190,6 +206,7 @@ def add_post():
         post.content = form.content.data
         post.date_updated = datetime.datetime.now()
         post.make_nicename()
+        post.subsite = subsite
         if form.save_as_draft_button.data:
             post.status = "draft"
         if form.publish_button.data:
@@ -209,15 +226,16 @@ def add_post():
 
 
         db.session.commit()
-        return redirect(url_for('post', nicename=post.nicename))
+        return redirect(url_for('post', subsite=subsite, nicename=post.nicename))
     return render_template('add_edit.html', form=form)
 
-@app.route('/posts/<nicename>/delete', methods=['GET', 'POST'])
+@app.route('/<subsite>/posts/<nicename>/delete', methods=['GET', 'POST'])
 @login_required
-def delete_post(nicename):
-    post = Post.query.filter(Post.nicename == nicename).first()
+def delete_post(subsite, nicename):
+    g.subsite = subsite
+    post = Post.query.filter(Post.subsite==subsite).filter(Post.nicename == nicename).first()
     if not post:
-        return redirect(url_for('show_posts'))
+        return redirect(url_for('show_posts', subsite=SUBSITES[0]))
     form = DeleteConfirm(request.form)
     if form.validate_on_submit():
         if form.confirm_delete.data:
@@ -228,39 +246,55 @@ def delete_post(nicename):
             return redirect(url_for('post', nicename=post.nicename))
     return render_template('confirm_delete.html', post=post, form=form)
 
-@app.route('/categories', methods=['GET'])
-def show_categories():
-    categories = Category.query.order_by(Category.display_name.asc()).all()
+@app.route('/<subsite>/categories', methods=['GET'])
+def show_categories(subsite):
+    if subsite not in SUBSITES:
+        return redirect(url_for('show_categories', subsite=SUBSITES[0]))
+    g.subsite = subsite
+    categories = Category.query.filter(Category.subsite==subsite).order_by(Category.display_name.asc()).all()
     return render_template('categories.html', categories=categories)
 
-@app.route('/categories/<category_nicename>', methods=['GET'])
-def category_postwall(category_nicename):
-    category = Category.query.filter(Category.nicename == category_nicename).first()
+@app.route('/<subsite>/categories/<category_nicename>', methods=['GET'])
+def category_postwall(subsite, category_nicename):
+    if subsite not in SUBSITES:
+        return redirect(url_for('show_categories', subsite=SUBSITES[0]))
+    g.subsite = subsite
+    category = Category.query.filter(Category.subsite==subsite).filter(Category.nicename == category_nicename).first()
     posts = category.posts.filter(Post.status=="publish").order_by(Post.date_published.desc()).all()
     return render_template('postwall.html', posts=posts, category=category)
 
-@app.route('/tags', methods=['GET'])
+@app.route('/<subsite>/tags', methods=['GET'])
 @app.cache.cached(timeout=300)
-def show_tags():
-    tags = Tag.query.order_by(Tag.display_name.asc()).all()
+def show_tags(subsite):
+    if subsite not in SUBSITES:
+        return redirect(url_for('show_tags', subsite=SUBSITES[0]))
+    g.subsite = subsite
+    tags = Tag.query.filter(Tag.subsite==subsite).order_by(Tag.display_name.asc()).all()
     return render_template('tags.html', tags=tags)
 
-@app.route('/tags/<tag_nicename>', methods=['GET'])
-def tag_postwall(tag_nicename):
-    tag = Tag.query.filter(Tag.nicename == tag_nicename).first()
+@app.route('/<subsite>/tags/<tag_nicename>', methods=['GET'])
+def tag_postwall(subsite, tag_nicename):
+    if subsite not in SUBSITES:
+        return redirect(url_for('show_tags', subsite=SUBSITES[0]))
+    g.subsite = subsite
+    tag = Tag.query.filter(Tag.subsite==subsite).filter(Tag.nicename == tag_nicename).first()
     posts = tag.posts.filter(Post.status=="publish").order_by(Post.date_published.desc()).all()
     return render_template('postwall.html', posts=posts, tag=tag)
 
-@app.route('/categories/add', methods=['GET', 'POST'])
+@app.route('/<subsite>/categories/add', methods=['GET', 'POST'])
 @login_required
-def add_categories():
-    categories = Category.query.order_by(Category.display_name.asc()).all()
+def add_categories(subsite):
+    if subsite not in SUBSITES:
+        return redirect(url_for('show_categories', subsite=SUBSITES[0]))
+    g.subsite = subsite
+    categories = Category.query.filter(Category.subsite==subsite).order_by(Category.display_name.asc()).all()
     add_form = AddCategoryForm()
     if request.method == "POST":
         if add_form.validate_on_submit() and add_form.add_button.data:
             print(add_form.add_category.data)
             category=Category(display_name=add_form.add_category.data)
             category.make_nicename()
+            category.subsite = subsite
             if Category.exists(category.nicename):
                 add_form.add_category.errors.append("Category already exists")
             else:
@@ -269,15 +303,18 @@ def add_categories():
                 return redirect(url_for('add_categories'))
     return render_template('add_categories.html', categories=categories, add_form=add_form)
 
-@app.route('/categories/edit', methods=['GET', 'POST'])
+@app.route('/<subsite>/categories/edit', methods=['GET', 'POST'])
 @login_required
-def edit_categories():
-    categories = Category.query.order_by(Category.display_name.asc()).all()
+def edit_categories(subsite):
+    if subsite not in SUBSITES:
+        return redirect(url_for('show_categories', subsite=SUBSITES[0]))
+    g.subsite = subsite
+    categories = Category.query.filter(Category.subsite==subsite).order_by(Category.display_name.asc()).all()
     edit_form = EditCategoryForm()
-    edit_form.categories.choices = Category.get_category_names()
+    edit_form.categories.choices = Category.get_category_names(subsite)
     if request.method == "POST":
         if edit_form.cancel_button.data:
-            return redirect(url_for('show_categories'))
+            return redirect(url_for('show_categories', subsite=subsite))
         if edit_form.validate_on_submit() and edit_form.edit_button.data:
             selected_category_nicename = edit_form.categories.data
             category = Category.get_by_nicename(selected_category_nicename)
@@ -286,22 +323,26 @@ def edit_categories():
                 category.make_nicename()
                 db.session.add(category)
                 db.session.commit()
-                return redirect(url_for('show_categories'))
+                return redirect(url_for('show_categories', subsite=subsite))
 
     return render_template('edit_categories.html', edit_form=edit_form)
 
-@app.route('/categories/merge_delete', methods=['GET', 'POST'])
+@app.route('/<subsite>/categories/merge_delete', methods=['GET', 'POST'])
 @login_required
-def merge_delete_categories():
-    categories = Category.query.order_by(Category.display_name.asc()).all()
 
+def merge_delete_categories(subsite):
+    if subsite not in SUBSITES:
+        return redirect(url_for('show_categories', subsite=SUBSITES[0]))
+    g.subsite = subsite
+    categories = Category.query.filter(Category.subsite==subsite).order_by(Category.display_name.asc()).all()
+ 
     merge_delete_form = MergeDeleteCategoryForm()
-    merge_delete_form.categories.choices = Category.get_category_names()
-
+    merge_delete_form.categories.choices = Category.get_category_names(subsite)
+    
     if request.method == "POST":
 
         if merge_delete_form.cancel_button.data:
-            return redirect(url_for('show_categories'))
+            return redirect(url_for('show_categories', subsite=subsite))
 
         if merge_delete_form.validate_on_submit() and merge_delete_form.delete_button.data:
             for category_name in merge_delete_form.categories.data:
@@ -314,8 +355,8 @@ def merge_delete_categories():
                         flash("Category removed from post: " + post.display_title)
                     db.session.delete(category)
                     db.session.commit()
-            return redirect(url_for('show_categories'))
-
+            return redirect(url_for('show_categories', subsite=subsite))
+        
         if merge_delete_form.validate_on_submit() and merge_delete_form.merge_button.data:
             if len(merge_delete_form.categories.data) > 1:
                 cats_to_merge = [Category.get_by_nicename(category_name) for category_name in merge_delete_form.categories.data]
@@ -323,6 +364,7 @@ def merge_delete_categories():
                 flash("Merged category added: "+new_category_name)
                 new_category=Category(display_name=new_category_name)
                 new_category.make_nicename()
+                new_category.subsite = subsite
                 if Category.exists(new_category.nicename):
                     merge_delete_form.categories.errors.append("Select more than one category to merge")
                 else:
@@ -335,39 +377,46 @@ def merge_delete_categories():
                             flash("Post categorised with merged category> " + post.display_title)
                     db.session.commit()
                     flash("Delete old categories if no longer needed")
-                    return redirect(url_for('show_categories'))
+                    return redirect(url_for('show_categories', subsite=subsite))
             else:
                 merge_delete_form.categories.errors.append("Select more than one category to merge")
 
     return render_template('md_categories.html', merge_delete_form=merge_delete_form)
 
-@app.route('/tags/add', methods=['GET', 'POST'])
+@app.route('/<subsite>/tags/add', methods=['GET', 'POST'])
 @login_required
-def add_tags():
-    tags = Tag.query.order_by(Tag.display_name.asc()).all()
+def add_tags(subsite):
+    if subsite not in SUBSITES:
+        return redirect(url_for('show_tags', subsite=SUBSITES[0]))
+    g.subsite = subsite
+    tags = Tag.query.filter(Tag.subsite==subsite).order_by(Tag.display_name.asc()).all()
     add_form = AddTagForm()
     if request.method == "POST":
         if add_form.validate_on_submit() and add_form.add_button.data:
             print(add_form.add_tag.data)
             tag=Tag(display_name=add_form.add_tag.data)
             tag.make_nicename()
+            tag.subsite = subsite
             if Tag.exists(tag.nicename):
                 add_form.add_tag.errors.append("Tag already exists")
             else:
                 db.session.add(tag)
                 db.session.commit()
-                return redirect(url_for('add_tags'))
+                return redirect(url_for('add_tags', subsite=subsite))
     return render_template('add_tags.html', tags=tags, add_form=add_form)
 
 @app.route('/tags/edit', methods=['GET', 'POST'])
 @login_required
 def edit_tags():
-    tags = Tag.query.order_by(Tag.display_name.asc()).all()
+    if subsite not in SUBSITES:
+        return redirect(url_for('show_tags', subsite=SUBSITES[0]))
+    g.subsite = subsite
+    tags = Tag.query.filter(Tag.subsite==subsite).order_by(Tag.display_name.asc()).all()
     edit_form = EditTagForm()
-    edit_form.tags.choices = Tag.get_tag_names()
+    edit_form.tags.choices = Tag.get_tag_names(subsite)
     if request.method == "POST":
         if edit_form.cancel_button.data:
-            return redirect(url_for('show_tags'))
+            return redirect(url_for('show_tags', subsite=subsite))
         if edit_form.validate_on_submit() and edit_form.edit_button.data:
             selected_tag_nicename = edit_form.tags.data
             tag = Tag.get_by_nicename(selected_tag_nicename)
@@ -376,22 +425,25 @@ def edit_tags():
                 tag.make_nicename()
                 db.session.add(tag)
                 db.session.commit()
-                return redirect(url_for('show_tags'))
+                return redirect(url_for('show_tags', subsite=subsite))
 
     return render_template('edit_tags.html', edit_form=edit_form)
 
-@app.route('/tags/merge_delete', methods=['GET', 'POST'])
+@app.route('/<subsite>/tags/merge_delete', methods=['GET', 'POST'])
 @login_required
-def merge_delete_tags():
-    tags = Tag.query.order_by(Tag.display_name.asc()).all()
-
+def merge_delete_tags(subsite):
+    if subsite not in SUBSITES:
+        return redirect(url_for('show_tags', subsite=SUBSITES[0]))
+    g.subsite = subsite
+    tags = Tag.query.filter(Tag.subsite==subsite).order_by(Tag.display_name.asc()).all()
+ 
     merge_delete_form = MergeDeleteTagForm()
-    merge_delete_form.tags.choices = Tag.get_tag_names()
-
+    merge_delete_form.tags.choices = Tag.get_tag_names(subsite)
+ 
     if request.method == "POST":
 
         if merge_delete_form.cancel_button.data:
-            return redirect(url_for('show_tags'))
+            return redirect(url_for('show_tags', subsite=subsite))
 
         if merge_delete_form.validate_on_submit() and merge_delete_form.delete_button.data:
             for tag_name in merge_delete_form.tags.data:
@@ -404,7 +456,7 @@ def merge_delete_tags():
                         flash("Tag removed from post: " + post.display_title)
                     db.session.delete(tag)
                     db.session.commit()
-            return redirect(url_for('show_tags'))
+            return redirect(url_for('show_tags', subsite=subsite))
 
         if merge_delete_form.validate_on_submit() and merge_delete_form.merge_button.data:
             if len(merge_delete_form.tags.data) > 1:
@@ -413,6 +465,7 @@ def merge_delete_tags():
                 flash("Merged tag added: "+new_tag_name)
                 new_tag=Tag(display_name=new_tag_name)
                 new_tag.make_nicename()
+                new_tag.subsite = subsite
                 if Tag.exists(new_tag.nicename):
                     merge_delete_form.tags.errors.append("Select more than one tag to merge")
                 else:
@@ -425,7 +478,7 @@ def merge_delete_tags():
                             flash("Post tagged with merged tag> " + post.display_title)
                     db.session.commit()
                     flash("Delete old tags if no longer needed")
-                    return redirect(url_for('show_tags'))
+                    return redirect(url_for('show_tags', subsite=subsite))
             else:
                 merge_delete_form.categories.errors.append("Select more than one tag to merge")
 
@@ -444,18 +497,19 @@ def sitemap():
                         #[rule.rule,ten_days_ago]
                         #)
     # Manually append main routes
-    pages = [
-        [url_for('show_posts'), ten_days_ago],
-        [url_for('show_categories'), ten_days_ago],
-        [url_for('show_tags'), ten_days_ago]
-        ]
 
-    # Blog posts
-    posts = Post.query.filter(Post.status=="publish").order_by(Post.date_updated.desc()).all()
-    for post in posts:
-        url=url_for('post',nicename=post.nicename)
-        modified_time=post.date_updated.isoformat()
-        pages.append([url,modified_time])
+    for subsite in SUBSITES:
+        pages.append([url_for('show_posts', subsite=subsite), ten_days_ago])
+        pages.append([url_for('show_categories', subsite=subsite), ten_days_ago])
+        pages.append([url_for('show_tags', subsite=subsite), ten_days_ago])
+    
+        # Blog posts
+        posts = Post.query.filter(Post.subsite==subsite).filter(Post.status=="publish").order_by(Post.date_updated.desc()).all()
+        for post in posts:
+            url=url_for('post', subsite=subsite, nicename=post.nicename)
+            modified_time=post.date_updated.isoformat()
+            pages.append([url,modified_time]) 
+
     sitemap_xml = render_template('sitemap.xml', pages=pages)
     response= make_response(sitemap_xml)
     response.headers["Content-Type"] = "application/xml"

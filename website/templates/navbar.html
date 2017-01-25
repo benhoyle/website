@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
 
 {% set navigation_bar = [
-    (url_for('show_posts'), 'posts', 'Posts'),
-    (url_for('show_categories'), 'categories', 'Categories'),
-    (url_for('show_tags'), 'tags', 'Tags')
+    (url_for('show_posts', subsite=g.subsite), 'posts', 'Posts'),
+    (url_for('show_categories', subsite=g.subsite), 'categories', 'Categories'),
+    (url_for('show_tags', subsite=g.subsite), 'tags', 'Tags')
 ] -%}
 {% set active_page = active_page|default('posts') -%}
 
@@ -11,7 +11,7 @@
 <nav class="navbar navbar-default navbar-static-top">
     <div class="container col-xs-offset-1 col-lg-offset-2 col-xs-10 col-lg-8">
         <div class="navbar-header">
-            <a class="navbar-brand" href="/">My Blog</a>
+            <a class="navbar-brand" href="/">{{ g.subsite }}</a>
         </div>
         <ul class="nav navbar-nav">
             {% for href, id, caption in navigation_bar %}
@@ -21,8 +21,8 @@
         {% if g.user.is_authenticated %}
         <ul class="nav navbar-nav navbar-right">
             <li><a href="">{{ g.user.login }} AKA {{ g.user.display_name }}</a></li>
-            <li><a href="{{ url_for('add_post') }}">New Post</a></li>
-            <li><a href="{{ url_for('show_drafts') }}">Drafts</a></li>
+            <li><a href="{{ url_for('add_post', subsite=g.subsite) }}">New Post</a></li>
+            <li><a href="{{ url_for('show_drafts', subsite=g.subsite) }}">Drafts</a></li>
             <li><a href="{{ url_for('logout') }}">Logout</a></li>
         </ul>
         {% endif %}
