@@ -1,31 +1,20 @@
-# This file may be used to create an environment using:
-# $ conda create --name <env> --file <this file>
-# platform: linux-32
-beautifulsoup4=4.5.1=py35_0
-click=6.6=py35_0
-flask=0.11.1=py35_0
-flask-login=0.3.2=py35_0
-flask-wtf=0.12=py35_0
-itsdangerous=0.24=py35_0
-jinja2=2.8=py35_1
-libxml2=2.9.2=0
-libxslt=1.1.28=0
-lxml=3.6.4=py35_0
-markupsafe=0.23=py35_2
-openssl=1.0.2j=0
-pip=9.0.1=py35_0
-py=1.4.31=py35_0
-pytest=3.0.5=py35_0
-python=3.5.2=0
-python-dateutil=2.6.0=py35_0
-readline=6.2=2
-requests=2.12.1=py35_0
-setuptools=27.2.0=py35_0
-six=1.10.0=py35_0
-sqlite=3.13.0=0
-tk=8.5.18=0
-werkzeug=0.11.11=py35_1
-wheel=0.29.0=py35_0
-wtforms=2.1=py35_0
-xz=5.2.2=0
-zlib=1.2.8=3
+# Flask
+Flask==0.12
+
+# Application server for both development and production.
+gunicorn==19.4.5
+
+# Extensions
+Flask-Login==0.3.2
+Flask-WTF==0.12
+Flask-SQLAlchemy==2.1
+Flask-Cach==0.13
+
+# Testing
+pytest==2.9.1
+pytest-cov==2.2.1
+
+
+
+
+

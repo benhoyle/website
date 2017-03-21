@@ -6,6 +6,9 @@ __pycache__/
 # Web files
 */static/images
 
+# Instance settings
+instance/settings.py
+
 # Databases
 *.db
 
