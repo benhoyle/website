@@ -109,3 +109,10 @@ class TestCase(ViewTestMixin):
         assert test_post.tags.count() == 2
         assert test_post.categories.count() == 1
         assert test_post.categories.first().nicename == "testcat"
+
+class TestOAReview(ViewTestMixin):
+    def test_index(self):
+        """ Home page should respond with a success 200. """
+        response = self.client.get(url_for('blog.index'))
+        assert response.status_code == 200
+

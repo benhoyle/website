@@ -9,9 +9,9 @@
         {% if g.user.is_authenticated %}
         <div id="edit_delete" class="row">
             <div class="btn-group btn-group-justified btn-group-lg">
-                <a href="{{ url_for('add_tags', subsite=g.subsite) }}" class="btn btn-default" >Add Tag</a>
-                <a href="{{ url_for('edit_tags', subsite=g.subsite) }}" class="btn btn-default" >Edit Tag</a>
-                <a href="{{ url_for('merge_delete_tags', subsite=g.subsite) }}" class="btn btn-default" >Merge/Delete Tag</a>
+                <a href="{{ url_for('blog.add_tags', subsite=g.subsite) }}" class="btn btn-default" >Add Tag</a>
+                <a href="{{ url_for('blog.edit_tags', subsite=g.subsite) }}" class="btn btn-default" >Edit Tag</a>
+                <a href="{{ url_for('blog.merge_delete_tags', subsite=g.subsite) }}" class="btn btn-default" >Merge/Delete Tag</a>
             </div>
         </div>
         {% endif %}
@@ -21,7 +21,7 @@
         <p class="top-padding">Here are the post tags, arranged in alphabetical order.</p>
         <div id="tags" class="text-justify">
             {% for tag in tags %}
-                <span style="font-size: {{ 100+5*tag.posts.count() }}%;"><a href={{url_for('tag_postwall', subsite=tag.subsite, tag_nicename=tag.nicename)}}>&#35;{{ tag.display_name }}</a></span>
+                <span style="font-size: {{ 100+5*tag.posts.count() }}%;"><a href={{url_for('blog.tag_postwall', subsite=tag.subsite, tag_nicename=tag.nicename)}}>&#35;{{ tag.display_name }}</a></span>
             {% endfor %}
         </div>
     </div>

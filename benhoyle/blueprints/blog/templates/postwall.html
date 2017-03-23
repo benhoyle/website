@@ -5,7 +5,7 @@
 <div id="postwall" class="row">
     <div id="postwallcontainer" class="col-xs-offset-1 col-lg-offset-2 col-xs-10 col-lg-8">
         <h2 class="text-center">
-            Wall of Posts 
+            Wall of Posts
             {% if category is defined %}<small>- Category: '{{ category.display_name }}'</small>{% endif %}
             {% if tag is defined %}<small>- Tag: '{{ tag.display_name }}'</small>{% endif %}
         </h2>
@@ -13,15 +13,15 @@
         <div id="postcells" class="">
         {% for post in posts %}
             <div id="postcell" class="top-padding">
-                <h4><a href= {{ url_for('post', subsite=post.subsite, nicename=post.nicename) }} >{{ post.display_title }}</a> 
+                <h4><a href= {{ url_for('blog.post', subsite=post.subsite, nicename=post.nicename) }} >{{ post.display_title }}</a>
                 {% if post.date_published %}
-                <small>- 
+                <small>-
                 {{ post.date_published.strftime('%-d %B %Y') }}
                 </small>
                 {% endif %}
                 </h4>
-                
-                <p class="postwalltext"> 
+
+                <p class="postwalltext">
                     {{ post.get_excerpt() | striptags }}
                 </p>
             </div>
