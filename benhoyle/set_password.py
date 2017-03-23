@@ -1,8 +1,8 @@
-from website.models import Author
+from benhoyle.blueprints.blog.models import Author
 
 import getpass
 
-from website import db
+from benhoyle.extensions import db
 
 print("Available authors:")
 for author in Author.query.all():

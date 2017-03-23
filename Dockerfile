@@ -12,6 +12,8 @@ RUN pip install -r requirements.txt
 
 COPY . .
 
+RUN pip install --editable .
+
 CMD  gunicorn \
     -b :8001 \
     --access-logfile - \
