@@ -88,7 +88,9 @@ def login():
                 session.pop('remember_me', None)
             login_user(user, remember=remember_me)
             flash('Welcome %s' % user.display_name)
-            return redirect(url_for('blog.show_posts', subsite=get_subsites()[0]))
+            return redirect(
+                url_for('blog.show_posts', subsite=get_subsites()[0])
+                )
         flash('Wrong email or password', 'error-message')
 
     return render_template("login.html", form=form)
@@ -107,8 +109,8 @@ def index():
 
 
 @blog.route('/<subsite>/posts', methods=['GET'])
+@cache.cached(timeout=300)
 def show_posts(subsite):
-
     if subsite not in get_subsites():
         return redirect(url_for('blog.show_posts', subsite=get_subsites()[0]))
     g.subsite = subsite
@@ -121,6 +123,7 @@ def show_posts(subsite):
 
 
 @blog.route('/<subsite>/posts/drafts', methods=['GET'])
+@login_required
 def show_drafts(subsite):
     if subsite not in get_subsites():
         return redirect(url_for('blog.show_drafts', subsite=get_subsites()[0]))
@@ -171,7 +174,10 @@ def edit_post(subsite, nicename):
         form.tags.process_data(post.get_tag_nicenames())
     if form.validate_on_submit():
         if form.cancel.data:
-            return redirect(url_for('blog.post', nicename=post.nicename))
+            return redirect(url_for(
+                'blog.post',
+                subsite=subsite,
+                nicename=post.nicename))
         if form.save_as_draft_button.data:
             post.status = "draft"
         if form.publish_button.data:
@@ -255,7 +261,12 @@ def delete_post(subsite, nicename):
         Post.subsite == subsite).filter(
             Post.nicename == nicename).first()
     if not post:
-        return redirect(url_for('blog.show_posts', subsite=get_subsites()[0]))
+        return redirect(
+            url_for(
+                'blog.show_posts',
+                subsite=get_subsites()[0]
+                )
+            )
     form = DeleteConfirm(request.form)
     if form.validate_on_submit():
         if form.confirm_delete.data:
@@ -263,14 +274,26 @@ def delete_post(subsite, nicename):
             db.session.commit()
             return redirect(url_for('blog.show_posts'))
         if form.cancel.data:
-            return redirect(url_for('blog.post', nicename=post.nicename))
+            return redirect(
+                url_for(
+                    'blog.post',
+                    subsite=subsite,
+                    nicename=post.nicename
+                    )
+                )
     return render_template('confirm_delete.html', post=post, form=form)
 
 
 @blog.route('/<subsite>/categories', methods=['GET'])
+@cache.cached(timeout=300)
 def show_categories(subsite):
     if subsite not in get_subsites():
-        return redirect(url_for('blog.show_categories', subsite=get_subsites()[0]))
+        return redirect(
+            url_for(
+                'blog.show_categories',
+                subsite=get_subsites()[0]
+                )
+            )
     g.subsite = subsite
     categories = Category.query.filter(
         Category.subsite == subsite).order_by(
@@ -279,9 +302,15 @@ def show_categories(subsite):
 
 
 @blog.route('/<subsite>/categories/<category_nicename>', methods=['GET'])
+@cache.cached(timeout=300)
 def category_postwall(subsite, category_nicename):
     if subsite not in get_subsites():
-        return redirect(url_for('blog.show_categories', subsite=get_subsites()[0]))
+        return redirect(
+            url_for(
+                'blog.show_categories',
+                subsite=get_subsites()[0]
+                )
+            )
     g.subsite = subsite
     category = Category.query.filter(
         Category.subsite == subsite).filter(
@@ -305,6 +334,7 @@ def show_tags(subsite):
 
 
 @blog.route('/<subsite>/tags/<tag_nicename>', methods=['GET'])
+@cache.cached(timeout=300)
 def tag_postwall(subsite, tag_nicename):
     if subsite not in get_subsites():
         return redirect(url_for('blog.show_tags', subsite=get_subsites()[0]))
@@ -322,7 +352,12 @@ def tag_postwall(subsite, tag_nicename):
 @login_required
 def add_categories(subsite):
     if subsite not in get_subsites():
-        return redirect(url_for('blog.show_categories', subsite=get_subsites()[0]))
+        return redirect(
+            url_for(
+                'blog.show_categories',
+                subsite=get_subsites()[0]
+                )
+            )
     g.subsite = subsite
     categories = Category.query.filter(
         Category.subsite == subsite).order_by(
@@ -351,7 +386,12 @@ def add_categories(subsite):
 @login_required
 def edit_categories(subsite):
     if subsite not in get_subsites():
-        return redirect(url_for('blog.show_categories', subsite=get_subsites()[0]))
+        return redirect(
+            url_for(
+                'blog.show_categories',
+                subsite=get_subsites()[0]
+                )
+            )
     g.subsite = subsite
     edit_form = EditCategoryForm()
     edit_form.categories.choices = Category.get_category_names(subsite)
@@ -366,7 +406,9 @@ def edit_categories(subsite):
                 category.make_nicename()
                 db.session.add(category)
                 db.session.commit()
-                return redirect(url_for('blog.show_categories', subsite=subsite))
+                return redirect(
+                    url_for('blog.show_categories', subsite=subsite)
+                    )
     return render_template('edit_categories.html', edit_form=edit_form)
 
 
@@ -374,7 +416,11 @@ def edit_categories(subsite):
 @login_required
 def merge_delete_categories(subsite):
     if subsite not in get_subsites():
-        return redirect(url_for('blog.show_categories', subsite=get_subsites()[0]))
+        return redirect(
+            url_for(
+                'blog.show_categories',
+                subsite=get_subsites()[0])
+            )
     g.subsite = subsite
 
     merge_delete_form = MergeDeleteCategoryForm()
