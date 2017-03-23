@@ -4,7 +4,8 @@ from benhoyle.extensions import (
     csrf,
     db,
     login_manager,
-    cache
+    cache,
+    debug_toolbar
 )
 
 from benhoyle.blueprints.blog.models import Author
@@ -51,6 +52,7 @@ def extensions(app):
     db.init_app(app)
     login_manager.init_app(app)
     cache.init_app(app)
+    debug_toolbar.init_app(app)
 
     return None
 
