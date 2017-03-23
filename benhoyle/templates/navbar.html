@@ -1,9 +1,9 @@
 {% extends 'upper_navbar.html' %}
 
 {% set navigation_bar = [
-    (url_for('show_posts', subsite=g.subsite), 'posts', 'Posts'),
-    (url_for('show_categories', subsite=g.subsite), 'categories', 'Categories'),
-    (url_for('show_tags', subsite=g.subsite), 'tags', 'Tags')
+    (url_for('blog.show_posts', subsite=g.subsite), 'posts', 'Posts'),
+    (url_for('blog.show_categories', subsite=g.subsite), 'categories', 'Categories'),
+    (url_for('blog.show_tags', subsite=g.subsite), 'tags', 'Tags')
 ] -%}
 {% set active_page = active_page|default('posts') -%}
 {% set active_subsite = g.subsite %}

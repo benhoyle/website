@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
 
 {% set upper_nav_bar = [
-    (url_for('show_posts', subsite='ipchimp'), 'ipchimp', 'ipchimp'),
-    (url_for('show_posts', subsite='roboticape'), 'roboticape', 'roboticape'),
-    (url_for('show_posts', subsite='pongidmusings'), 'pongidmusings', 'pongidmusings')
+    (url_for('blog.show_posts', subsite='ipchimp'), 'ipchimp', 'ipchimp'),
+    (url_for('blog.show_posts', subsite='roboticape'), 'roboticape', 'roboticape'),
+    (url_for('blog.show_posts', subsite='pongidmusings'), 'pongidmusings', 'pongidmusings')
 ] -%}
 {% set active_subsite = active_subsite|default('') -%}
 
