@@ -12,4 +12,4 @@ RUN pip install -r requirements.txt
 
 COPY . .
 
-CMD gunicorn -c "python:config.gunicorn" "benhoyle.app:create_app()"
+CMD gunicorn -c "python:config/gunicorn.py" "benhoyle.app:create_app()"
