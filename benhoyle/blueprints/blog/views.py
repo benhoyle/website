@@ -15,10 +15,10 @@ from flask_login import (
 from benhoyle.extensions import db, cache
 
 # Import models
-from benhoyle.models import Post, Tag, Category, Author
+from benhoyle.blueprints.blog.models import Post, Tag, Category, Author
 
 # Import forms
-from benhoyle.forms import (
+from benhoyle.blueprints.blog.forms import (
     PostForm, DeleteConfirm, LoginForm, AddCategoryForm,
     EditCategoryForm, MergeDeleteCategoryForm,
     MergeDeleteTagForm, EditTagForm, AddTagForm
@@ -374,7 +374,6 @@ def merge_delete_categories(subsite):
     if subsite not in SUBSITES:
         return redirect(url_for('show_categories', subsite=SUBSITES[0]))
     g.subsite = subsite
-    categories = Category.query.filter(Category.subsite==subsite).order_by(Category.display_name.asc()).all()
 
     merge_delete_form = MergeDeleteCategoryForm()
     merge_delete_form.categories.choices = Category.get_category_names(subsite)
@@ -384,7 +383,10 @@ def merge_delete_categories(subsite):
         if merge_delete_form.cancel_button.data:
             return redirect(url_for('show_categories', subsite=subsite))
 
-        if merge_delete_form.validate_on_submit() and merge_delete_form.delete_button.data:
+        if (
+            merge_delete_form.validate_on_submit() and
+            merge_delete_form.delete_button.data
+        ):
             for category_name in merge_delete_form.categories.data:
                 category = Category.get_by_nicename(category_name)
                 if category:
@@ -392,21 +394,34 @@ def merge_delete_categories(subsite):
                     for post in category.posts:
                         post.uncategorise(category)
                         db.session.add(post)
-                        flash("Category removed from post: " + post.display_title)
+                        flash(
+                            "Category removed from post: "
+                            + post.display_title
+                            )
                     db.session.delete(category)
                     db.session.commit()
             return redirect(url_for('show_categories', subsite=subsite))
 
-        if merge_delete_form.validate_on_submit() and merge_delete_form.merge_button.data:
+        if (
+            merge_delete_form.validate_on_submit() and
+            merge_delete_form.merge_button.data
+        ):
             if len(merge_delete_form.categories.data) > 1:
-                cats_to_merge = [Category.get_by_nicename(category_name) for category_name in merge_delete_form.categories.data]
-                new_category_name = " ".join([c.display_name for c in cats_to_merge])
+                cats_to_merge = [
+                    Category.get_by_nicename(category_name)
+                    for category_name in merge_delete_form.categories.data
+                    ]
+                new_category_name = " ".join(
+                    [c.display_name for c in cats_to_merge]
+                    )
                 flash("Merged category added: "+new_category_name)
-                new_category=Category(display_name=new_category_name)
+                new_category = Category(display_name=new_category_name)
                 new_category.make_nicename()
                 new_category.subsite = subsite
                 if Category.exists(new_category.nicename):
-                    merge_delete_form.categories.errors.append("Select more than one category to merge")
+                    merge_delete_form.categories.errors.append(
+                        "Select more than one category to merge"
+                        )
                 else:
                     db.session.add(new_category)
                     db.session.commit()
@@ -414,14 +429,25 @@ def merge_delete_categories(subsite):
                         for post in category.posts:
                             post.categorise(new_category)
                             db.session.add(post)
-                            flash("Post categorised with merged category> " + post.display_title)
+                            flash(
+                                "Post categorised with merged category> "
+                                + post.display_title
+                                )
                     db.session.commit()
                     flash("Delete old categories if no longer needed")
-                    return redirect(url_for('show_categories', subsite=subsite))
+                    return redirect(
+                        url_for('show_categories', subsite=subsite)
+                        )
             else:
-                merge_delete_form.categories.errors.append("Select more than one category to merge")
+                merge_delete_form.categories.errors.append(
+                    "Select more than one category to merge"
+                    )
 
-    return render_template('md_categories.html', merge_delete_form=merge_delete_form)
+    return render_template(
+        'md_categories.html',
+        merge_delete_form=merge_delete_form
+        )
+
 
 @blog.route('/<subsite>/tags/add', methods=['GET', 'POST'])
 @login_required
@@ -429,12 +455,14 @@ def add_tags(subsite):
     if subsite not in SUBSITES:
         return redirect(url_for('show_tags', subsite=SUBSITES[0]))
     g.subsite = subsite
-    tags = Tag.query.filter(Tag.subsite==subsite).order_by(Tag.display_name.asc()).all()
+    tags = Tag.query.filter(
+        Tag.subsite == subsite).order_by(
+            Tag.display_name.asc()).all()
     add_form = AddTagForm()
     if request.method == "POST":
         if add_form.validate_on_submit() and add_form.add_button.data:
             print(add_form.add_tag.data)
-            tag=Tag(display_name=add_form.add_tag.data)
+            tag = Tag(display_name=add_form.add_tag.data)
             tag.make_nicename()
             tag.subsite = subsite
             if Tag.exists(tag.nicename):
@@ -445,13 +473,13 @@ def add_tags(subsite):
                 return redirect(url_for('add_tags', subsite=subsite))
     return render_template('add_tags.html', tags=tags, add_form=add_form)
 
-@blog.route('/tags/edit', methods=['GET', 'POST'])
+
+@blog.route('<subsite>/tags/edit', methods=['GET', 'POST'])
 @login_required
-def edit_tags():
+def edit_tags(subsite):
     if subsite not in SUBSITES:
         return redirect(url_for('show_tags', subsite=SUBSITES[0]))
     g.subsite = subsite
-    tags = Tag.query.filter(Tag.subsite==subsite).order_by(Tag.display_name.asc()).all()
     edit_form = EditTagForm()
     edit_form.tags.choices = Tag.get_tag_names(subsite)
     if request.method == "POST":
@@ -469,13 +497,13 @@ def edit_tags():
 
     return render_template('edit_tags.html', edit_form=edit_form)
 
+
 @blog.route('/<subsite>/tags/merge_delete', methods=['GET', 'POST'])
 @login_required
 def merge_delete_tags(subsite):
     if subsite not in SUBSITES:
         return redirect(url_for('show_tags', subsite=SUBSITES[0]))
     g.subsite = subsite
-    tags = Tag.query.filter(Tag.subsite==subsite).order_by(Tag.display_name.asc()).all()
 
     merge_delete_form = MergeDeleteTagForm()
     merge_delete_form.tags.choices = Tag.get_tag_names(subsite)
@@ -485,7 +513,10 @@ def merge_delete_tags(subsite):
         if merge_delete_form.cancel_button.data:
             return redirect(url_for('show_tags', subsite=subsite))
 
-        if merge_delete_form.validate_on_submit() and merge_delete_form.delete_button.data:
+        if (
+            merge_delete_form.validate_on_submit() and
+            merge_delete_form.delete_button.data
+        ):
             for tag_name in merge_delete_form.tags.data:
                 tag = Tag.get_by_nicename(tag_name)
                 if tag:
@@ -498,16 +529,26 @@ def merge_delete_tags(subsite):
                     db.session.commit()
             return redirect(url_for('show_tags', subsite=subsite))
 
-        if merge_delete_form.validate_on_submit() and merge_delete_form.merge_button.data:
+        if (
+            merge_delete_form.validate_on_submit() and
+            merge_delete_form.merge_button.data
+        ):
             if len(merge_delete_form.tags.data) > 1:
-                tags_to_merge = [Tag.get_by_nicename(tag_name) for tag_name in merge_delete_form.tags.data]
-                new_tag_name = " ".join([c.display_name for c in tags_to_merge])
+                tags_to_merge = [
+                    Tag.get_by_nicename(tag_name)
+                    for tag_name in merge_delete_form.tags.data
+                    ]
+                new_tag_name = " ".join(
+                    [c.display_name for c in tags_to_merge]
+                    )
                 flash("Merged tag added: "+new_tag_name)
-                new_tag=Tag(display_name=new_tag_name)
+                new_tag = Tag(display_name=new_tag_name)
                 new_tag.make_nicename()
                 new_tag.subsite = subsite
                 if Tag.exists(new_tag.nicename):
-                    merge_delete_form.tags.errors.append("Select more than one tag to merge")
+                    merge_delete_form.tags.errors.append(
+                        "Select more than one tag to merge"
+                        )
                 else:
                     db.session.add(new_tag)
                     db.session.commit()
@@ -515,33 +556,44 @@ def merge_delete_tags(subsite):
                         for post in tag.posts:
                             post.tag(new_tag)
                             db.session.add(post)
-                            flash("Post tagged with merged tag> " + post.display_title)
+                            flash(
+                                "Post tagged with merged tag> "
+                                + post.display_title
+                                )
                     db.session.commit()
                     flash("Delete old tags if no longer needed")
                     return redirect(url_for('show_tags', subsite=subsite))
             else:
-                merge_delete_form.categories.errors.append("Select more than one tag to merge")
+                merge_delete_form.categories.errors.append(
+                    "Select more than one tag to merge"
+                    )
 
     return render_template('md_tags.html', merge_delete_form=merge_delete_form)
 
+
 @blog.route('/sitemap.xml', methods=['GET'])
 def sitemap():
-
+    pages = []
     ten_days_ago = datetime.datetime.now() - datetime.timedelta(days=10)
 
     for subsite in SUBSITES:
         pages.append([url_for('show_posts', subsite=subsite), ten_days_ago])
-        pages.append([url_for('show_categories', subsite=subsite), ten_days_ago])
+        pages.append(
+            [url_for('show_categories', subsite=subsite), ten_days_ago]
+            )
         pages.append([url_for('show_tags', subsite=subsite), ten_days_ago])
 
         # Blog posts
-        posts = Post.query.filter(Post.subsite==subsite).filter(Post.status=="publish").order_by(Post.date_updated.desc()).all()
+        posts = Post.query.filter(
+            Post.subsite == subsite).filter(
+                Post.status == "publish").order_by(
+                    Post.date_updated.desc()).all()
         for post in posts:
-            url=url_for('post', subsite=subsite, nicename=post.nicename)
-            modified_time=post.date_updated.isoformat()
-            pages.append([url,modified_time])
+            url = url_for('post', subsite=subsite, nicename=post.nicename)
+            modified_time = post.date_updated.isoformat()
+            pages.append([url, modified_time])
 
     sitemap_xml = render_template('sitemap.xml', pages=pages)
-    response= make_response(sitemap_xml)
+    response = make_response(sitemap_xml)
     response.headers["Content-Type"] = "application/xml"
     return response
