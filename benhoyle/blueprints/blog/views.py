@@ -4,7 +4,7 @@ import datetime
 # Import flask and template operators
 from flask import (
     render_template, request, redirect, url_for, g,
-    session, flash, make_response, Blueprint, current_app
+    session, flash, make_response, Blueprint
     )
 
 # Import Login Manager
@@ -31,7 +31,7 @@ blog = Blueprint(
 
 
 # Add custom jinja2 filter for rendering posts
-@blog.template_filter()
+@blog.app_template_filter()
 def contentfilter(content):
     """ Split into lines and format paragraphs """
     output_lines = []
@@ -52,11 +52,13 @@ def contentfilter(content):
     return "\n".join(output_lines)
 
 
-current_app.jinja_env.filters['contentfilter'] = contentfilter
+# current_app.jinja_env.filters['contentfilter'] = contentfilter
 
-SUBSITES = [
-    result[0] for result in
-    db.session.query(Post.subsite).distinct().all()
+def get_subsites():
+    """ Return list of subsites. """
+    return [
+        result[0] for result in
+        db.session.query(Post.subsite).distinct().all()
     ]
 
 
@@ -86,7 +88,7 @@ def login():
                 session.pop('remember_me', None)
             login_user(user, remember=remember_me)
             flash('Welcome %s' % user.display_name)
-            return redirect(url_for('show_posts', subsite=SUBSITES[0]))
+            return redirect(url_for('show_posts', subsite=get_subsites()[0]))
         flash('Wrong email or password', 'error-message')
 
     return render_template("login.html", form=form)
@@ -107,8 +109,8 @@ def index():
 @blog.route('/<subsite>/posts', methods=['GET'])
 def show_posts(subsite):
 
-    if subsite not in SUBSITES:
-        return redirect(url_for('show_posts', subsite=SUBSITES[0]))
+    if subsite not in get_subsites():
+        return redirect(url_for('show_posts', subsite=get_subsites()[0]))
     g.subsite = subsite
     posts = Post.query.filter(
         Post.subsite == subsite).filter(
@@ -120,8 +122,8 @@ def show_posts(subsite):
 
 @blog.route('/<subsite>/posts/drafts', methods=['GET'])
 def show_drafts(subsite):
-    if subsite not in SUBSITES:
-        return redirect(url_for('show_drafts', subsite=SUBSITES[0]))
+    if subsite not in get_subsites():
+        return redirect(url_for('show_drafts', subsite=get_subsites()[0]))
     g.subsite = subsite
     posts = Post.query.filter(
         Post.subsite == subsite).filter(
@@ -132,8 +134,8 @@ def show_drafts(subsite):
 
 @blog.route('/<subsite>/posts/<nicename>', methods=['GET'])
 def post(subsite, nicename):
-    if subsite not in SUBSITES:
-        return redirect(url_for('show_posts', subsite=SUBSITES[0]))
+    if subsite not in get_subsites():
+        return redirect(url_for('show_posts', subsite=get_subsites()[0]))
     g.subsite = subsite
     if g.user is not None and g.user.is_authenticated:
         # Show drafts as well as published posts
@@ -205,8 +207,8 @@ def edit_post(subsite, nicename):
 @blog.route('/<subsite>/posts/add', methods=['GET', 'POST'])
 @login_required
 def add_post(subsite):
-    if subsite not in SUBSITES:
-        return redirect(url_for('show_posts', subsite=SUBSITES[0]))
+    if subsite not in get_subsites():
+        return redirect(url_for('show_posts', subsite=get_subsites()[0]))
     g.subsite = subsite
     form = PostForm()
     form.categories.choices = Category.get_category_names(subsite)
@@ -253,7 +255,7 @@ def delete_post(subsite, nicename):
         Post.subsite == subsite).filter(
             Post.nicename == nicename).first()
     if not post:
-        return redirect(url_for('show_posts', subsite=SUBSITES[0]))
+        return redirect(url_for('show_posts', subsite=get_subsites()[0]))
     form = DeleteConfirm(request.form)
     if form.validate_on_submit():
         if form.confirm_delete.data:
@@ -267,8 +269,8 @@ def delete_post(subsite, nicename):
 
 @blog.route('/<subsite>/categories', methods=['GET'])
 def show_categories(subsite):
-    if subsite not in SUBSITES:
-        return redirect(url_for('show_categories', subsite=SUBSITES[0]))
+    if subsite not in get_subsites():
+        return redirect(url_for('show_categories', subsite=get_subsites()[0]))
     g.subsite = subsite
     categories = Category.query.filter(
         Category.subsite == subsite).order_by(
@@ -278,8 +280,8 @@ def show_categories(subsite):
 
 @blog.route('/<subsite>/categories/<category_nicename>', methods=['GET'])
 def category_postwall(subsite, category_nicename):
-    if subsite not in SUBSITES:
-        return redirect(url_for('show_categories', subsite=SUBSITES[0]))
+    if subsite not in get_subsites():
+        return redirect(url_for('show_categories', subsite=get_subsites()[0]))
     g.subsite = subsite
     category = Category.query.filter(
         Category.subsite == subsite).filter(
@@ -293,8 +295,8 @@ def category_postwall(subsite, category_nicename):
 @blog.route('/<subsite>/tags', methods=['GET'])
 @cache.cached(timeout=300)
 def show_tags(subsite):
-    if subsite not in SUBSITES:
-        return redirect(url_for('show_tags', subsite=SUBSITES[0]))
+    if subsite not in get_subsites():
+        return redirect(url_for('show_tags', subsite=get_subsites()[0]))
     g.subsite = subsite
     tags = Tag.query.filter(
         Tag.subsite == subsite).order_by(
@@ -304,8 +306,8 @@ def show_tags(subsite):
 
 @blog.route('/<subsite>/tags/<tag_nicename>', methods=['GET'])
 def tag_postwall(subsite, tag_nicename):
-    if subsite not in SUBSITES:
-        return redirect(url_for('show_tags', subsite=SUBSITES[0]))
+    if subsite not in get_subsites():
+        return redirect(url_for('show_tags', subsite=get_subsites()[0]))
     g.subsite = subsite
     tag = Tag.query.filter(
         Tag.subsite == subsite).filter(
@@ -319,8 +321,8 @@ def tag_postwall(subsite, tag_nicename):
 @blog.route('/<subsite>/categories/add', methods=['GET', 'POST'])
 @login_required
 def add_categories(subsite):
-    if subsite not in SUBSITES:
-        return redirect(url_for('show_categories', subsite=SUBSITES[0]))
+    if subsite not in get_subsites():
+        return redirect(url_for('show_categories', subsite=get_subsites()[0]))
     g.subsite = subsite
     categories = Category.query.filter(
         Category.subsite == subsite).order_by(
@@ -348,8 +350,8 @@ def add_categories(subsite):
 @blog.route('/<subsite>/categories/edit', methods=['GET', 'POST'])
 @login_required
 def edit_categories(subsite):
-    if subsite not in SUBSITES:
-        return redirect(url_for('show_categories', subsite=SUBSITES[0]))
+    if subsite not in get_subsites():
+        return redirect(url_for('show_categories', subsite=get_subsites()[0]))
     g.subsite = subsite
     edit_form = EditCategoryForm()
     edit_form.categories.choices = Category.get_category_names(subsite)
@@ -371,8 +373,8 @@ def edit_categories(subsite):
 @blog.route('/<subsite>/categories/merge_delete', methods=['GET', 'POST'])
 @login_required
 def merge_delete_categories(subsite):
-    if subsite not in SUBSITES:
-        return redirect(url_for('show_categories', subsite=SUBSITES[0]))
+    if subsite not in get_subsites():
+        return redirect(url_for('show_categories', subsite=get_subsites()[0]))
     g.subsite = subsite
 
     merge_delete_form = MergeDeleteCategoryForm()
@@ -452,8 +454,8 @@ def merge_delete_categories(subsite):
 @blog.route('/<subsite>/tags/add', methods=['GET', 'POST'])
 @login_required
 def add_tags(subsite):
-    if subsite not in SUBSITES:
-        return redirect(url_for('show_tags', subsite=SUBSITES[0]))
+    if subsite not in get_subsites():
+        return redirect(url_for('show_tags', subsite=get_subsites()[0]))
     g.subsite = subsite
     tags = Tag.query.filter(
         Tag.subsite == subsite).order_by(
@@ -474,11 +476,11 @@ def add_tags(subsite):
     return render_template('add_tags.html', tags=tags, add_form=add_form)
 
 
-@blog.route('<subsite>/tags/edit', methods=['GET', 'POST'])
+@blog.route('/<subsite>/tags/edit', methods=['GET', 'POST'])
 @login_required
 def edit_tags(subsite):
-    if subsite not in SUBSITES:
-        return redirect(url_for('show_tags', subsite=SUBSITES[0]))
+    if subsite not in get_subsites():
+        return redirect(url_for('show_tags', subsite=get_subsites()[0]))
     g.subsite = subsite
     edit_form = EditTagForm()
     edit_form.tags.choices = Tag.get_tag_names(subsite)
@@ -501,8 +503,8 @@ def edit_tags(subsite):
 @blog.route('/<subsite>/tags/merge_delete', methods=['GET', 'POST'])
 @login_required
 def merge_delete_tags(subsite):
-    if subsite not in SUBSITES:
-        return redirect(url_for('show_tags', subsite=SUBSITES[0]))
+    if subsite not in get_subsites():
+        return redirect(url_for('show_tags', subsite=get_subsites()[0]))
     g.subsite = subsite
 
     merge_delete_form = MergeDeleteTagForm()
@@ -576,7 +578,7 @@ def sitemap():
     pages = []
     ten_days_ago = datetime.datetime.now() - datetime.timedelta(days=10)
 
-    for subsite in SUBSITES:
+    for subsite in get_subsites():
         pages.append([url_for('show_posts', subsite=subsite), ten_days_ago])
         pages.append(
             [url_for('show_categories', subsite=subsite), ten_days_ago]

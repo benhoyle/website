@@ -13,7 +13,7 @@ RUN pip install -r requirements.txt
 COPY . .
 
 CMD  gunicorn \
-    -b :8000 \
+    -b :8001 \
     --access-logfile - \
     --reload \
     "benhoyle.app:create_app()" \
