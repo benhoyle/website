@@ -2,19 +2,20 @@
 
 from datetime import datetime
 
-from website import db
+from benhoyle.extensions import db
 
 import re
 
 # Import security helper functions
 from werkzeug.security import generate_password_hash, check_password_hash
 
+
 class Base(db.Model):
     """ Extensions to Base class. """
 
-    __abstract__  = True
+    __abstract__ = True
 
-    id =  db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
 
     def as_dict(self):
         """ Return object as a dictionary. """
@@ -30,34 +31,39 @@ class Base(db.Model):
 
     def populate(self, data):
         """ Populates matching attributes of class instance.
-        param dict data: dict where for each entry key, value equal attributename, attributevalue."""
+        param dict data: dict where for each entry key, value
+        equal attributename, attributevalue."""
         for key, value in data.items():
             if hasattr(self, key):
                 # Convert string dates into datetimes
-                if isinstance(getattr(self, key), datetime) or str(self.__table__.c[key].type) == 'DATE':
+                if isinstance(
+                    getattr(self, key), datetime
+                ) or str(self.__table__.c[key].type) == 'DATE':
                     value = datetime.strptime(value, "%d %B %Y")
                 setattr(self, key, value)
 
 
 # Define post to tag association table
-post_tag = db.Table('post_tag',
+post_tag = db.Table(
+    'post_tag',
     db.Column('post_id', db.Integer, db.ForeignKey('post.id')),
     db.Column('tag_id', db.Integer, db.ForeignKey('tag.id'))
     )
 
 # Define post to category association table
-post_category = db.Table('post_category',
+post_category = db.Table(
+    'post_category',
     db.Column('post_id', db.Integer, db.ForeignKey('post.id')),
     db.Column('category_id', db.Integer, db.ForeignKey('category.id'))
     )
 
 # Define post to author association table
-post_author = db.Table('post_author',
+post_author = db.Table(
+    'post_author',
     db.Column('post_id', db.Integer, db.ForeignKey('post.id')),
     db.Column('author_id', db.Integer, db.ForeignKey('author.id'))
     )
 
-# Add class Subsite
 
 class Category(Base):
     """ Model for blog categories. """
@@ -71,13 +77,14 @@ class Category(Base):
     # parent is referred to by nicename
     parent = db.Column(db.Integer, db.ForeignKey('category.id'))
 
-    #subsite e.g. if importing multiple different blogs
+    # subsite e.g. if importing multiple different blogs
     subsite = db.Column(db.String(25))
 
     @staticmethod
     def exists(nicename):
         """ Check if a category with nicename already exists. """
-        return Category.query.filter(Category.nicename == nicename).count() > 0
+        return Category.query.filter(
+            Category.nicename == nicename).count() > 0
 
     @staticmethod
     def get_by_nicename(nicename):
@@ -86,27 +93,27 @@ class Category(Base):
 
     def add_parent(self, parent_nicename):
         """ Adds parent category based on parent_nicename. """
-        parent_category = Category.query.filter(Category.nicename == parent_nicename).first()
+        parent_category = Category.query.filter(
+            Category.nicename == parent_nicename).first()
         if parent_category:
             self.parent = parent_category.id
         return self
 
-    #@classmethod
-    #def get_posts_by_category(cls, category_nicename):
-        #""" Return posts having category."""
-        #catergory_id = cls.query.filter(cls.nicename == category_nicename).first()
-        #if category_id:
-            #return db.session.query(post_category).join(Post, (Post.id == post_category.c.post_id)).filter(post_category.c.category_id == category_id).all()
-
     @classmethod
     def get_category_names(cls, subsite):
-        """ Return list of tuples (nicename, display_name) for existing tags. """
-        return [(c.nicename, c.display_name) for c in cls.query.filter(cls.subsite==subsite).order_by('display_name').all()]
-        
+        """ Return list of tuples (nicename, display_name) for
+        existing tags. """
+        return [
+            (c.nicename, c.display_name)
+            for c in cls.query.filter(
+                cls.subsite == subsite).order_by('display_name').all()
+            ]
+
     def make_nicename(self):
         """Generate the nicename from the display title"""
         no_punct = re.sub(r'[^\w\s]', '', self.display_name.lower().strip())
         self.nicename = re.sub(r'\s+', '-', no_punct)
+
 
 class Tag(Base):
     """ Model for blog tags. """
@@ -116,7 +123,7 @@ class Tag(Base):
     # Tag name with spaces and capitals
     display_name = db.Column(db.String(256))
 
-    #subsite e.g. if importing multiple different blogs
+    # subsite e.g. if importing multiple different blogs
     subsite = db.Column(db.String(25))
 
     @staticmethod
@@ -131,14 +138,19 @@ class Tag(Base):
 
     @classmethod
     def get_tag_names(cls, subsite):
-        """ Return list of tuples (nicename, display_name) for existing tags. """
-        return [(tag.nicename, tag.display_name) for tag in cls.query.filter(cls.subsite==subsite).order_by('display_name').all()]
-        
+        """ Return list of tuples (nicename, display_name)
+        for existing tags. """
+        return [
+            (tag.nicename, tag.display_name)
+            for tag in cls.query.filter(
+                cls.subsite == subsite).order_by('display_name').all()
+                ]
 
     def make_nicename(self):
         """Generate the nicename from the display title"""
         no_punct = re.sub(r'[^\w\s]', '', self.display_name.lower().strip())
         self.nicename = re.sub(r'\s+', '-', no_punct)
+
 
 class Author(Base):
     """ Model for blog authors. """
@@ -150,9 +162,9 @@ class Author(Base):
     last_name = db.Column(db.String(128))
     password = db.Column(db.String(256))
 
-    #subsite e.g. if importing multiple different blogs
+    # subsite e.g. if importing multiple different blogs
     subsite = db.Column(db.String(25))
-    
+
     @staticmethod
     def exists(login):
         """ Check if a tag with nicename already exists. """
@@ -194,7 +206,7 @@ class Post(Base):
     excerpt = db.Column(db.Text)
     # date post first published
     date_published = db.Column(db.DateTime)
-    # Store year and month separately to allow for quick archive link generation
+    # Store year and month separately to allow for quick archive link
     date_published_year = db.Column(db.Integer)
     date_published_month = db.Column(db.Integer)
     # date post updated
@@ -202,23 +214,28 @@ class Post(Base):
     # status - draft = not public, publish = published on Internet
     status = db.Column(db.String(25))
 
-    authors = db.relationship('Author',
+    authors = db.relationship(
+                        'Author',
                         secondary=post_author,
                         backref=db.backref('posts', lazy='dynamic'),
-                        lazy='dynamic')
+                        lazy='dynamic'
+                        )
 
-
-    tags = db.relationship('Tag',
+    tags = db.relationship(
+                        'Tag',
                         secondary=post_tag,
                         backref=db.backref('posts', lazy='dynamic'),
-                        lazy='dynamic')
+                        lazy='dynamic'
+                        )
 
-    categories = db.relationship('Category',
+    categories = db.relationship(
+                        'Category',
                         secondary=post_category,
                         backref=db.backref('posts', lazy='dynamic'),
-                        lazy='dynamic')
-    
-    #subsite e.g. if importing multiple different blogs
+                        lazy='dynamic'
+                        )
+
+    # subsite e.g. if importing multiple different blogs
     subsite = db.Column(db.String(25))
 
     def make_nicename(self):
@@ -255,7 +272,8 @@ class Post(Base):
 
     def categorise_by_nicename(self, cat_nicename):
         """ Add tag based on nicename. """
-        category = Category.query.filter(Category.nicename == cat_nicename).first()
+        category = Category.query.filter(
+            Category.nicename == cat_nicename).first()
         if category:
             return self.categorise(category)
 
@@ -273,7 +291,8 @@ class Post(Base):
 
     def categorised(self, category):
         """ Is category assigned to post? """
-        return self.categories.filter(post_category.c.category_id == category.id).count() > 0
+        return self.categories.filter(
+            post_category.c.category_id == category.id).count() > 0
 
     def add_author_by_login(self, login):
         """ Add tag based on nicename. """
