@@ -10,7 +10,7 @@ __pycache__/
 instance/settings.py
 
 # Databases
-db/*.db*
+*/db/*.db*
 
 # C extensions
 *.so
