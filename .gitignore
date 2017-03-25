@@ -15,9 +15,6 @@ instance/settings.py
 # C extensions
 *.so
 
-# XML files
-*.xml
-
 # Distribution / packaging
 .Python
 env/

@@ -631,13 +631,34 @@ def sitemap():
 
     for subsite in get_subsites():
         pages.append(
-            [url_for('blog.show_posts', subsite=subsite), ten_days_ago]
+            [
+                url_for(
+                    'blog.show_posts',
+                    subsite=subsite,
+                    _external=True
+                ),
+                ten_days_ago
+            ]
             )
         pages.append(
-            [url_for('show_categories', subsite=subsite), ten_days_ago]
+            [
+                url_for(
+                    'blog.show_categories',
+                    subsite=subsite,
+                    _external=True
+                ),
+                ten_days_ago
+            ]
             )
         pages.append(
-            [url_for('blog.show_tags', subsite=subsite), ten_days_ago]
+            [
+                url_for(
+                    'blog.show_tags',
+                    subsite=subsite,
+                    _external=True
+                ),
+                ten_days_ago
+            ]
             )
 
         # Blog posts
@@ -646,7 +667,12 @@ def sitemap():
                 Post.status == "publish").order_by(
                     Post.date_updated.desc()).all()
         for post in posts:
-            url = url_for('blog.post', subsite=subsite, nicename=post.nicename)
+            url = url_for(
+                'blog.post',
+                subsite=subsite,
+                nicename=post.nicename,
+                _external=True
+                )
             modified_time = post.date_updated.isoformat()
             pages.append([url, modified_time])
 
