@@ -1,4 +1,5 @@
 {% extends 'navbar.html' %}
+{% from 'paginate.html' import paginate %}
 
 {% block content %}
 
@@ -11,12 +12,12 @@
         </h2>
         <p class="top-padding">Here are the posts, arranged in descending date order.</p>
         <div id="postcells" class="">
-        {% for post in posts %}
+        {% for post in posts.items %}
             <div id="postcell" class="top-padding">
                 <h4><a href= {{ url_for('blog.post', subsite=post.subsite, nicename=post.nicename) }} >{{ post.display_title }}</a>
                 {% if post.date_published %}
                 <small>-
-                {{ post.date_published.strftime('%-d %B %Y') }}
+                {{ post.date_published }}
                 </small>
                 {% endif %}
                 </h4>
@@ -27,6 +28,7 @@
             </div>
         {% endfor %}
         </div>
+        {{ paginate(posts, subsite) }}
     </div>
 
 </div>

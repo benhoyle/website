@@ -108,18 +108,23 @@ def index():
     return render_template('frontpage.html')
 
 
-@blog.route('/<subsite>/posts', methods=['GET'])
+@blog.route('/<subsite>/posts', defaults={'page': 1})
+@blog.route('/<subsite>/posts/page/<int:page>')
 @cache.cached(timeout=300)
-def show_posts(subsite):
+def show_posts(subsite, page):
     if subsite not in get_subsites():
         return redirect(url_for('blog.show_posts', subsite=get_subsites()[0]))
     g.subsite = subsite
-    posts = Post.query.filter(
+    paginated_posts = Post.query.filter(
         Post.subsite == subsite).filter(
             Post.status == "publish").order_by(
-                Post.date_published.desc()).all()
+                Post.date_published.desc()).paginate(page, 20, True)
 
-    return render_template('postwall.html', posts=posts)
+    return render_template(
+        'postwall.html',
+        posts=paginated_posts,
+        subsite=subsite
+        )
 
 
 @blog.route('/<subsite>/posts/drafts', methods=['GET'])
