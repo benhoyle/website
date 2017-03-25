@@ -115,4 +115,29 @@ class TestOAReview(ViewTestMixin):
         """ Home page should respond with a success 200. """
         response = self.client.get(url_for('blog.index'))
         assert response.status_code == 200
+        assert "ben hoyle" in str(response.data)
 
+    def test_blog_home(self):
+        """ Test blog wall for each subsite. """
+        
+        subsites = [
+            result[0] for result in
+            self.session.query(Post.subsite).distinct().all()
+        ]
+        
+        def top_navbar(response_data, subsites):
+            """ Test top navbar is present based on response data. """
+            for subsite in subsites:
+                assert subsite in str(response_data)
+                
+        def next_navbar(response_data):
+            """ Check for next level navbar. """
+            assert "Posts" in str(response_data)
+            assert "Categories" in str(response_data)
+            assert "Tags" in str(response_data)
+        
+        for subsite in subsites:
+            response = self.client.get(url_for('blog.post_wall'), subsite=subsite)
+            top_navbar(response.data, subsites)
+            
+            
