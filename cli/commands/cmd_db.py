@@ -79,7 +79,7 @@ def reset_db(ctx, with_testdb):
 
 
 @click.command()
-def show_authors()
+def show_authors():
     """
     Show all registered blog authors in the system
 

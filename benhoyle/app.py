@@ -66,7 +66,7 @@ def authentication(app, user_model):
     :type user_model: SQLAlchemy model
     :return: None
     """
-    login_manager.login_view = 'login'
+    login_manager.login_view = 'blog.login'
 
     @login_manager.user_loader
     def load_user(uid):
