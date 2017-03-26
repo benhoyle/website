@@ -303,13 +303,16 @@ class Post(Base):
 
     def get_excerpt(self):
         """ Return excerpt if exists; if not create from content. """
-        if len(self.excerpt) > 1:
-            return self.excerpt
+        if self.excerpt:
+            if len(self.excerpt) > 1:
+                return self.excerpt
+            else:
+                try:
+                    return self.content.splitlines()[0] + "..."
+                except:
+                    return None
         else:
-            try:
-                return self.content.splitlines()[0] + "..."
-            except:
-                return None
+            return None
 
     def get_tag_nicenames(self):
         """ Get nicenames of post tags. """

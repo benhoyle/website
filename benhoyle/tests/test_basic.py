@@ -103,7 +103,7 @@ def add_test_records(session):
         nicename="test-post",
         content="This is a test post",
         date_published=datetime.datetime.now(),
-        status="published",
+        status="publish",
         subsite="Test1"
     )
     session.add(test_post)
@@ -162,9 +162,11 @@ class TestOAReview(ViewTestMixin):
 
         for subsite in subsites:
             response = self.client.get(
-                url_for('blog.post_wall'),
-                subsite=subsite
+                url_for(
+                    'blog.show_posts',
+                    subsite=subsite
                 )
+            )
             assert response.status_code == 200
 
             # Test navbars are displaying
@@ -186,9 +188,11 @@ class TestOAReview(ViewTestMixin):
 
         for subsite in subsites:
             response = self.client.get(
-                url_for('blog.show_categories'),
-                subsite=subsite
+                url_for(
+                    'blog.show_categories',
+                    subsite=subsite
                 )
+            )
             assert response.status_code == 200
 
             # Test navbars are displaying
@@ -209,9 +213,11 @@ class TestOAReview(ViewTestMixin):
 
         for subsite in subsites:
             response = self.client.get(
-                url_for('blog.show_tags'),
-                subsite=subsite
+                url_for(
+                    'blog.show_tags',
+                    subsite=subsite
                 )
+            )
             assert response.status_code == 200
 
             # Test navbars are displaying

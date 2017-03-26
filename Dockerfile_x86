@@ -14,6 +14,8 @@ COPY . .
 
 RUN pip install --editable .
 
+#VOLUME database:./benhoyle/db/
+
 CMD gunicorn \
     -b :8000 \
     --access-logfile - \

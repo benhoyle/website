@@ -12,7 +12,7 @@ from flask_login import (
     login_user, logout_user, current_user, login_required
     )
 
-from benhoyle.extensions import db, cache
+from benhoyle.extensions import db
 
 # Import models
 from benhoyle.blueprints.blog.models import Post, Tag, Category, Author
@@ -103,14 +103,13 @@ def logout():
     return redirect(url_for('blog.index'))
 
 
-@blog.route('/', methods=['GET'])
+@blog.route('/')
 def index():
     return render_template('frontpage.html')
 
 
 @blog.route('/<subsite>/posts', defaults={'page': 1})
 @blog.route('/<subsite>/posts/page/<int:page>')
-@cache.cached(timeout=300)
 def show_posts(subsite, page):
     if subsite not in get_subsites():
         return redirect(url_for('blog.show_posts', subsite=get_subsites()[0]))
@@ -126,20 +125,21 @@ def show_posts(subsite, page):
         )
 
 
-@blog.route('/<subsite>/posts/drafts', methods=['GET'])
+@blog.route('/<subsite>/posts/drafts', defaults={'page': 1})
+@blog.route('/<subsite>/posts/drafts/page/<int:page>')
 @login_required
-def show_drafts(subsite):
+def show_drafts(subsite, page):
     if subsite not in get_subsites():
         return redirect(url_for('blog.show_drafts', subsite=get_subsites()[0]))
     g.subsite = subsite
-    posts = Post.query.filter(
+    paginated_posts = Post.query.filter(
         Post.subsite == subsite).filter(
             Post.status == "draft").order_by(
-                Post.date_updated.desc()).all()
-    return render_template('postwall.html', posts=posts)
+                Post.date_updated.desc()).paginate(page, 10, True)
+    return render_template('postwall.html', posts=paginated_posts)
 
 
-@blog.route('/<subsite>/posts/<nicename>', methods=['GET'])
+@blog.route('/<subsite>/posts/<nicename>')
 def post(subsite, nicename):
     if subsite not in get_subsites():
         return redirect(url_for('blog.show_posts', subsite=get_subsites()[0]))
@@ -288,8 +288,7 @@ def delete_post(subsite, nicename):
     return render_template('confirm_delete.html', post=post, form=form)
 
 
-@blog.route('/<subsite>/categories', methods=['GET'])
-@cache.cached(timeout=300)
+@blog.route('/<subsite>/categories')
 def show_categories(subsite):
     if subsite not in get_subsites():
         return redirect(
@@ -306,7 +305,6 @@ def show_categories(subsite):
 
 
 @blog.route('/<subsite>/categories/<category_nicename>', methods=['GET'])
-@cache.cached(timeout=300)
 def category_postwall(subsite, category_nicename):
     if subsite not in get_subsites():
         return redirect(
@@ -326,7 +324,6 @@ def category_postwall(subsite, category_nicename):
 
 
 @blog.route('/<subsite>/tags', methods=['GET'])
-@cache.cached(timeout=300)
 def show_tags(subsite):
     if subsite not in get_subsites():
         return redirect(url_for('blog.show_tags', subsite=get_subsites()[0]))
@@ -338,7 +335,6 @@ def show_tags(subsite):
 
 
 @blog.route('/<subsite>/tags/<tag_nicename>', methods=['GET'])
-@cache.cached(timeout=300)
 def tag_postwall(subsite, tag_nicename):
     if subsite not in get_subsites():
         return redirect(url_for('blog.show_tags', subsite=get_subsites()[0]))
