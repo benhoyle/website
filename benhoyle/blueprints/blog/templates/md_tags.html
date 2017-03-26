@@ -2,8 +2,9 @@
 
 {% set active_page = 'tags' %}
 
-{% block content %}
+{% block title %}{{ g.subsite }} - Merge Tags{% endblock %}
 
+{% block content %}
 <div id="mergedelete" class="row">
     <div id="mergedeletecontainer" class="col-xs-offset-1 col-lg-offset-2 col-xs-10 col-lg-8">
         <form method="POST" id="merge_delete_form">

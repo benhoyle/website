@@ -1,5 +1,7 @@
 {% extends 'navbar.html' %}
 
+{% block title %}{{ g.subsite }} - Add Categories{% endblock %}
+
 {% set active_page = 'categories' %}
 
 {% block content %}
@@ -26,8 +28,6 @@
 </div>
 <div id="postwall" class="row">
     <div id="postwallcontainer" class="col-xs-offset-1 col-lg-offset-2 col-xs-10 col-lg-8">
-
-
         <p class="top-padding">Here are the post categories, arranged in alphabetical order.</p>
         <div id="postcells" class="">
             {%- for column in categories|slice(2) %}

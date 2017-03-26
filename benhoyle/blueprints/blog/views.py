@@ -122,8 +122,7 @@ def show_posts(subsite, page):
 
     return render_template(
         'postwall.html',
-        posts=paginated_posts,
-        subsite=subsite
+        posts=paginated_posts
         )
 
 
