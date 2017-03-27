@@ -9,7 +9,7 @@ LOG_LEVEL = 'INFO'
 
 # SQLAlchemy.
 SQLALCHEMY_DATABASE_URI  = (
-    'sqlite:///' + BASE_DIR + '/benhoyle/db/website.db'
+    'sqlite:///' + BASE_DIR + '/instance/db/website.db'
     )
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
