@@ -306,12 +306,9 @@ class Post(Base):
         if self.excerpt:
             if len(self.excerpt) > 1:
                 return self.excerpt
-            else:
-                try:
-                    return self.content.splitlines()[0] + "..."
-                except:
-                    return None
-        else:
+        try:
+            return self.content.splitlines()[0] + "..."
+        except:
             return None
 
     def get_tag_nicenames(self):
@@ -319,5 +316,17 @@ class Post(Base):
         return [tag.nicename for tag in self.tags]
 
     def get_category_nicenames(self):
-        """ Get nicenames of post tags. """
+        """ Get nicenames of post categories. """
         return [cat.nicename for cat in self.categories]
+
+    def get_tags(self):
+        """ Get display names of post tags. """
+        return [tag.display_name for tag in self.tags]
+
+    def get_categories(self):
+        """ Get display names of post categories. """
+        return [cat.display_name for cat in self.categories]
+
+    def get_authors(self):
+        """ Get a list of authors. """
+        return [author.display_name for author in self.authors]

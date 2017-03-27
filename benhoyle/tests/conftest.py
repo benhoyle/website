@@ -57,7 +57,7 @@ def db(app):
     # Create a single user because a lot of tests do not mutate this user.
     # It will result in faster tests.
     params = {
-        'email': 'admin@local.host',
+        'login': 'admin',
         'password': 'password'
     }
 

@@ -2,6 +2,10 @@
 
 {% block title %}{{ post.display_title }}{% endblock %}
 
+{% block description %}{{ post.get_excerpt()|striptags  }}{% endblock %}
+{% block keywords %}{{ post.get_categories()|join(', ') }}, {{ post.get_tags()|join(', ') }} {% endblock %}
+{% block author %}{{ post.get_authors()|join(', ')}}{% endblock %}
+
 {% block content %}
 <div id="postpage" class="row">
     <div id="postcontainer" class="col-xs-offset-1 col-lg-offset-2 col-xs-10 col-lg-8">

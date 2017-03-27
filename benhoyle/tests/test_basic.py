@@ -16,7 +16,7 @@ class ViewTestMixin(object):
         self.session = session
         self.client = client
 
-    def login(self, identity='admin@local.host', password='password'):
+    def login(self, identity='admin', password='password'):
         """
         Login a specific user.
 
@@ -44,7 +44,7 @@ def login(client, username='', password=''):
     :type password: str
     :return: Flask response
     """
-    user = dict(identity=username, password=password)
+    user = dict(login=username, password=password)
 
     response = client.post(url_for('blog.login'), data=user,
                            follow_redirects=True)
@@ -98,7 +98,7 @@ def add_test_records(session):
     session.add(test_category)
     session.commit()
 
-    test_post = Post(
+    test_post1 = Post(
         display_title="Test Post",
         nicename="test-post",
         content="This is a test post",
@@ -106,12 +106,23 @@ def add_test_records(session):
         status="publish",
         subsite="Test1"
     )
-    session.add(test_post)
+    session.add(test_post1)
     session.commit()
 
-    test_post.tag(test_tag1)
-    test_post.tag(test_tag2)
-    test_post.categorise(test_category)
+    test_post2 = Post(
+        display_title="Test Draft",
+        nicename="test-draft",
+        content="This is a test draftpost",
+        date_published=datetime.datetime.now(),
+        status="draft",
+        subsite="Test1"
+    )
+    session.add(test_post2)
+    session.commit()
+
+    test_post1.tag(test_tag1)
+    test_post1.tag(test_tag2)
+    test_post1.categorise(test_category)
 
     session.commit()
 
@@ -228,3 +239,71 @@ class TestOAReview(ViewTestMixin):
             tag = Tag.query.filter(
                 Tag.subsite == subsite).first()
             assert tag.display_name in str(response.data)
+
+    def test_category_postwall(self):
+        """ Test viewing a category postwall."""
+        subsites = [
+            result[0] for result in
+            self.session.query(Post.subsite).distinct().all()
+        ]
+
+        for subsite in subsites:
+            for category in Category.query.filter(
+                Category.subsite == subsite).all():
+
+                response = self.client.get(
+                    url_for(
+                        'blog.category_postwall',
+                        subsite=subsite,
+                        category_nicename=category.nicename
+                    )
+                )
+            assert response.status_code == 200
+            assert category.display_name in str(response.data)
+
+    def test_category_postwall(self):
+        """ Test viewing a category postwall."""
+        subsites = [
+            result[0] for result in
+            self.session.query(Post.subsite).distinct().all()
+        ]
+
+        for subsite in subsites:
+            for tag in Tag.query.filter(
+                Tag.subsite == subsite).all():
+
+                response = self.client.get(
+                    url_for(
+                        'blog.tag_postwall',
+                        subsite=subsite,
+                        tag_nicename=tag.nicename
+                    )
+                )
+            assert response.status_code == 200
+            assert tag.display_name in str(response.data)
+
+    def test_login(self):
+        """ Test logging in."""
+        response = self.login()
+        assert response.status_code == 200
+
+        subsites = [
+            result[0] for result in
+            self.session.query(Post.subsite).distinct().all()
+        ]
+
+        """response = self.client.get(
+            url_for(
+                'blog.show_drafts',
+                subsite=subsites[0]
+            )
+        )
+        assert response.status_code == 200"""
+
+        response = self.logout()
+        assert response.status_code == 200
+
+        response = self.login(password="wrong")
+        assert response.status_code == 200
+        assert "Please sign" in str(response.data)
+
