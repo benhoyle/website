@@ -1,16 +1,20 @@
 # Pull base image.
 FROM python:3.5-alpine
 
+RUN apk update && apk upgrade && \
+    apk add --no-cache git
 
 RUN git clone https://github.com/benhoyle/website.git
 
 WORKDIR /website
 
+RUN mkdir instance
+
 RUN pip install -r requirements.txt
 
 RUN pip install --editable .
 
-VOLUME ./instance/db/:./instance/db/
+VOLUME data:./instance/
 
 CMD gunicorn \
     -b :8000 \

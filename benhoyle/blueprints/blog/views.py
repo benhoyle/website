@@ -139,6 +139,47 @@ def show_drafts(subsite, page):
     return render_template('postwall.html', posts=paginated_posts)
 
 
+@blog.route('/<subsite>/categories/<category_nicename>')
+def category_postwall(subsite, category_nicename):
+    if subsite not in get_subsites():
+        return redirect(
+            url_for(
+                'blog.show_categories',
+                subsite=get_subsites()[0]
+                )
+            )
+    g.subsite = subsite
+    category = Category.query.filter(
+        Category.subsite == subsite).filter(
+            Category.nicename == category_nicename).first()
+    posts = category.posts.filter(
+        Post.status == "publish").order_by(
+            Post.date_published.desc()).all()
+    return render_template(
+        'tag_cat_postwall.html',
+        posts=posts,
+        category=category
+        )
+
+
+@blog.route('/<subsite>/tags/<tag_nicename>')
+def tag_postwall(subsite, tag_nicename):
+    if subsite not in get_subsites():
+        return redirect(url_for('blog.show_tags', subsite=get_subsites()[0]))
+    g.subsite = subsite
+    tag = Tag.query.filter(
+        Tag.subsite == subsite).filter(
+            Tag.nicename == tag_nicename).first()
+    posts = tag.posts.filter(
+        Post.status == "publish").order_by(
+            Post.date_published.desc()).all()
+    return render_template(
+        'tag_cat_postwall.html',
+        posts=posts,
+        tag=tag
+        )
+
+
 @blog.route('/<subsite>/posts/<nicename>')
 def post(subsite, nicename):
     if subsite not in get_subsites():
@@ -156,7 +197,7 @@ def post(subsite, nicename):
                 Post.status == "publish").filter(
                     Post.nicename == nicename).first()
     if not post:
-        return redirect(url_for('blog.show_posts'), subsite=subsite)
+        return redirect(url_for('blog.show_posts', subsite=subsite))
     return render_template('post.html', post=post)
 
 
@@ -304,25 +345,6 @@ def show_categories(subsite):
     return render_template('categories.html', categories=categories)
 
 
-@blog.route('/<subsite>/categories/<category_nicename>', methods=['GET'])
-def category_postwall(subsite, category_nicename):
-    if subsite not in get_subsites():
-        return redirect(
-            url_for(
-                'blog.show_categories',
-                subsite=get_subsites()[0]
-                )
-            )
-    g.subsite = subsite
-    category = Category.query.filter(
-        Category.subsite == subsite).filter(
-            Category.nicename == category_nicename).first()
-    posts = category.posts.filter(
-        Post.status == "publish").order_by(
-            Post.date_published.desc()).all()
-    return render_template('postwall.html', posts=posts, category=category)
-
-
 @blog.route('/<subsite>/tags', methods=['GET'])
 def show_tags(subsite):
     if subsite not in get_subsites():
@@ -332,20 +354,6 @@ def show_tags(subsite):
         Tag.subsite == subsite).order_by(
             Tag.display_name.asc()).all()
     return render_template('tags.html', tags=tags)
-
-
-@blog.route('/<subsite>/tags/<tag_nicename>', methods=['GET'])
-def tag_postwall(subsite, tag_nicename):
-    if subsite not in get_subsites():
-        return redirect(url_for('blog.show_tags', subsite=get_subsites()[0]))
-    g.subsite = subsite
-    tag = Tag.query.filter(
-        Tag.subsite == subsite).filter(
-            Tag.nicename == tag_nicename).first()
-    posts = tag.posts.filter(
-        Post.status == "publish").order_by(
-            Post.date_published.desc()).all()
-    return render_template('postwall.html', posts=posts, tag=tag)
 
 
 @blog.route('/<subsite>/categories/add', methods=['GET', 'POST'])

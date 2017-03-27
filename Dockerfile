@@ -1,18 +1,20 @@
 # Pull base image.
 FROM aarch64/python:3.5-alpine
 
-# Makes a nice tidy working directory
-ENV INSTALL_PATH /website
-RUN mkdir -p $INSTALL_PATH
+RUN apk update && apk upgrade && \
+    apk add --no-cache git
 
-WORKDIR $INSTALL_PATH
+RUN git clone https://github.com/benhoyle/website.git
 
-COPY requirements.txt requirements.txt
+WORKDIR /website
+
+RUN mkdir instance
+
 RUN pip install -r requirements.txt
 
-COPY . .
-
 RUN pip install --editable .
+
+VOLUME data:./instance/
 
 CMD  gunicorn \
     -b :8001 \

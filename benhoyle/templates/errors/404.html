@@ -1,11 +1,11 @@
-<!DOCTYPE HTML>
-<html>
-<head>
-<meta charset="utf-8">
-<title>Page Not Found</title>
-</head>
+{% extends 'upper_navbar.html' %}
 
-<body>
-Page not found
-</body>
-</html>
+{% block title %}Page Not Found{% endblock %}
+
+{% block content %}
+
+<div class="row" style="margin: 100px">
+    <h2 class="featurette-heading text-center">Sorry we cannot find that page.</h2>
+</div>
+
+{% endblock %}
